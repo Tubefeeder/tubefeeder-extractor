@@ -1,19 +1,22 @@
-use crate::subscription::Subscription;
+use crate::subscription::YTSubscription;
+
+use tf_core::Video;
 
 use async_trait::async_trait;
-use rusty_pipe::extractors::YTStreamInfoItemExtractor;
+use chrono::NaiveDateTime;
+use rusty_pipe::extractors::{YTStreamExtractor, YTStreamInfoItemExtractor};
 
 #[derive(Clone, Debug)]
-pub struct Video {
+pub struct YTVideo {
     url: String,
     title: String,
-    subscription: Subscription,
-    uploaded: String,
+    subscription: YTSubscription,
+    uploaded: NaiveDateTime,
 }
 
-impl Video {
-    pub(crate) fn from_extractor(
-        subscription: Subscription,
+impl YTVideo {
+    pub(crate) async fn from_extractor(
+        subscription: YTSubscription,
         extractor: YTStreamInfoItemExtractor,
     ) -> Result<Self, tf_core::Error> {
         let url = extractor
@@ -22,11 +25,22 @@ impl Video {
         let title = extractor
             .name()
             .map_err(|e| tf_core::Error::from(tf_core::ParseError(format!("{}", e))))?;
-        let uploaded = extractor
-            .textual_upload_date()
-            .map_err(|e| tf_core::Error::from(tf_core::ParseError(format!("{}", e))))?;
 
-        Ok(Video {
+        let uploaded = if let Ok(id) = extractor.video_id() {
+            if let Ok(stream_extractor) = YTStreamExtractor::new(&id, crate::Downloader {}).await {
+                stream_extractor
+                    .upload_date()
+                    .map(|d| d.and_hms(0, 0, 0))
+                    .map_err(|e| tf_core::Error::from(tf_core::ParseError(format!("{}", e))))
+                    .unwrap_or(NaiveDateTime::from_timestamp(0, 0))
+            } else {
+                NaiveDateTime::from_timestamp(0, 0)
+            }
+        } else {
+            NaiveDateTime::from_timestamp(0, 0)
+        };
+
+        Ok(YTVideo {
             url,
             title,
             subscription,
@@ -36,11 +50,10 @@ impl Video {
 }
 
 #[async_trait]
-impl tf_core::Video for Video {
-    type Subscription = Subscription;
+impl Video for YTVideo {
+    type Subscription = YTSubscription;
     type Rating = ();
     type Thumbnail = ();
-    type UploadTime = String;
 
     async fn url(&self) -> String {
         self.url.clone()
@@ -51,7 +64,7 @@ impl tf_core::Video for Video {
     async fn subscription(&self) -> Self::Subscription {
         self.subscription.clone()
     }
-    async fn uploaded(&self) -> Self::UploadTime {
+    async fn uploaded(&self) -> chrono::NaiveDateTime {
         self.uploaded.clone()
     }
     async fn rating(&self) -> Self::Rating {}

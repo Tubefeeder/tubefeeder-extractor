@@ -1,4 +1,3 @@
-pub mod generator;
 pub mod subscription;
 pub mod video;
 
