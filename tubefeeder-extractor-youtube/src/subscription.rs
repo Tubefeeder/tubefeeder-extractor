@@ -1,98 +1,97 @@
-use crate::video::YTVideo;
+use crate::{structure::Feed, video::YTVideo};
 
-use std::pin::Pin;
+use async_trait::async_trait;
 
-use futures::Stream;
-use rusty_pipe::extractors::YTChannelExtractor;
+fn feed_url() -> String {
+    #[cfg(not(test))]
+    let url = "https://www.youtube.com/feeds/videos.xml?channel_id=".to_owned();
+    #[cfg(test)]
+    let url = format!("{}/{}/", mockito::server_url(), "youtube");
 
-use tf_core::Subscription;
+    return url;
+}
 
-#[derive(Clone, Debug)]
+/// A [`Subscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct YTSubscription {
+    /// The channel id.
     id: String,
 }
 
 impl YTSubscription {
-    pub fn id(&self) -> String {
-        self.id.clone()
-    }
-
+    /// Create a new [`Subscription`] using the given channel id.
     pub fn new(id: &str) -> Self {
         YTSubscription { id: id.to_owned() }
     }
-}
 
-impl Subscription for YTSubscription {
-    type Video = YTVideo;
-    fn generator(&self) -> Pin<Box<dyn Stream<Item = Result<YTVideo, tf_core::Error>>>> {
-        let id = self.id.clone();
-        let self_clone = self.clone();
-        log::debug!("Constructing Stream");
-        let stream = async_stream::stream! {
-            let mut channel_extractor = YTChannelExtractor::new::<crate::Downloader>(&id, None).await;
-            loop {
-                log::debug!("Got new extractor");
-                if let Err(e) = channel_extractor {
-                    log::error!("Failed parsing channel page with id {}", id);
-                    yield Err(tf_core::ParseError(format!("{}", e)).into());
-                    break;
-                }
-
-                let videos = channel_extractor.as_ref().unwrap().videos();
-
-                if let Err(e) = videos {
-                    log::error!("Failed parsing video page of channel with id {}", id);
-                    yield Err(tf_core::ParseError(format!("{}", e)).into());
-                    break;
-                }
-
-
-                for v in videos.unwrap() {
-                    let video = YTVideo::from_extractor(self_clone.clone(), v).await;
-                    if let Err(e) = video {
-                        log::error!("Failed parsing video of channel with id {}", id);
-                        yield Err(e);
-                    } else {
-                        yield Ok(video.unwrap());
-                    }
-                }
-
-                let next_page_url = channel_extractor.as_ref().unwrap().next_page_url();
-
-                if let Err(e) = next_page_url {
-                    log::error!("Failed parsing next page of channel with id {}", id);
-                    yield Err(tf_core::ParseError(format!("{}", e)).into());
-                    break;
-                }
-
-                if let Ok(None) = next_page_url {
-                    log::debug!("Got no new page, exiting stream");
-                    break;
-                }
-
-                channel_extractor = YTChannelExtractor::new::<crate::Downloader>(&id, Some(next_page_url.unwrap().unwrap())).await;
-            }
-        };
-
-        Box::pin(stream)
+    /// Get the channel id of the [`Subscription`].
+    pub fn id(&self) -> String {
+        self.id.clone()
     }
 }
 
+#[async_trait]
+impl tf_core::Subscription for YTSubscription {
+    type Video = YTVideo;
+    type Iterator = std::vec::IntoIter<Self::Video>;
+    async fn generate(&self) -> (Self::Iterator, Option<tf_core::Error>) {
+        let result = reqwest::get(format!("{}{}", feed_url(), self.id())).await;
+        if let Err(e) = result {
+            return (vec![].into_iter(), Some(e.into()));
+        }
+
+        let body = result.unwrap().text().await;
+        if let Err(e) = body {
+            return (vec![].into_iter(), Some(e.into()));
+        }
+
+        // Replace all occurrences of `media:` with `media_` as serde does not seem to like `:`.
+        let body_parsable = body.unwrap().replace("media:", "media_");
+
+        let parsed = quick_xml::de::from_str::<Feed>(&body_parsable);
+        if let Err(_e) = parsed {
+            return (
+                vec![].into_iter(),
+                Some(tf_core::ParseError(format!("channel {}", self.id())).into()),
+            );
+        }
+
+        (Vec::<YTVideo>::from(parsed.unwrap()).into_iter(), None)
+    }
+}
 #[cfg(test)]
 mod test {
     use super::*;
-    use futures::stream::StreamExt;
+    use mockito::{mock, Matcher};
+    use tf_core::Subscription;
+
+    fn expected_videos() -> Vec<YTVideo> {
+        let subscription = YTSubscription::new("ThisIsAChannelId");
+        let video1 = YTVideo {
+            url: "https://www.youtube.com/watch?v=videoid1".to_string(),
+            title: "VIDEO 1 !! Click".to_string(),
+            subscription: subscription.clone(),
+            uploaded: chrono::NaiveDate::from_ymd(2021, 7, 19).and_hms(16, 18, 6),
+        };
+        let video2 = YTVideo {
+            url: "https://www.youtube.com/watch?v=videoid2".to_string(),
+            title: "VIDEO 2 !! Click".to_string(),
+            subscription,
+            uploaded: chrono::NaiveDate::from_ymd(2021, 7, 29).and_hms(16, 18, 6),
+        };
+
+        vec![video1, video2]
+    }
 
     #[tokio::test]
-    async fn test() {
-        let _ = env_logger::init();
-        let subscription = YTSubscription::new("UCSMOQeBJ2RAnuFungnQOxLg");
-        let mut stream = subscription.generator();
+    async fn youtube_generator() {
+        let _m = mock("GET", Matcher::Regex(r"^/youtube/".to_string()))
+            .with_status(200)
+            .with_body(include_str!("../resources/test/youtubefeed.xml"))
+            .create();
 
-        while let Some(v) = stream.as_mut().next().await {
-            println!("{:?}", v);
-        }
+        let videos = YTSubscription::new("ThisIsAChannelId").generate().await.0;
 
-        panic!()
+        assert_eq!(videos.collect::<Vec<_>>(), expected_videos());
     }
 }

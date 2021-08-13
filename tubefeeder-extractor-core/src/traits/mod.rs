@@ -2,6 +2,10 @@
 //!
 //! This contains:
 //!
-//! - [`Subscription`][subscription::Subscription]s
+//! - [`Generator`][generator::Generator]
+//! - [`Subscription`][subscription::Subscription]
+//! - [`Video`][subscription::Video]
 
+pub mod generator;
 pub mod subscription;
+pub mod video;

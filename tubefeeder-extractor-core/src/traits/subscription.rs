@@ -1,27 +1,47 @@
-use futures::stream::Stream;
-use std::pin::Pin;
-// use std::fmt;
+use async_trait::async_trait;
+
+use crate::Video;
+
+#[cfg(test)]
+use {crate::traits::video::MockVideo, mockall::predicate::*, mockall::*};
 
 /// A [`Subscription`] to a channel. The [`Subscription`] must be able to generate a [`Generator`]
 /// that can fetch the [`Video`][crate::Video]s of the [`Subscription`].
-pub trait Subscription {
+#[async_trait]
+pub trait Subscription: Clone {
     type Video: crate::Video;
-    /// Get the [`Generator`] to generate the [`crate::Video`]s of the subscription.
-    fn generator(&self) -> Pin<Box<dyn Stream<Item = Result<Self::Video, crate::Error>>>>;
-    // where
-    //     Self::Generator: Stream<Item = Self::Video>;
+    type Iterator: Iterator<Item = Self::Video>;
+    async fn generate(&self) -> (Self::Iterator, Option<crate::Error>);
 }
 
-// impl<T> fmt::Debug for dyn Subscription<Generator = T> {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         // TODO
-//         write!(f, "")
-//     }
-// }
+#[async_trait]
+impl<S, V> super::generator::Generator for S
+where
+    S: Subscription<Video = V> + std::marker::Sync + std::marker::Send,
+    V: Video<Subscription = S>,
+{
+    type Item = V;
 
-// impl<T> PartialEq<dyn Subscription<Generator = T>> for dyn Subscription<Generator = T> {
-//     fn eq(&self, _other: &dyn Subscription<Generator = T>) -> bool {
-//         // TODO
-//         true
-//     }
-// }
+    type Iterator = <S as Subscription>::Iterator;
+
+    async fn generate(&self) -> (<S as Subscription>::Iterator, Option<crate::Error>) {
+        self.generate().await
+    }
+}
+
+#[cfg(test)]
+mock! {
+    pub(crate) Subscription {}
+
+    impl Clone for Subscription {
+        fn clone(&self) -> Self;
+    }
+
+
+    #[async_trait]
+    impl Subscription for Subscription {
+        type Video = MockVideo;
+        type Iterator = std::vec::IntoIter<MockVideo>;
+        async fn generate(&self) -> (<Self as Subscription>::Iterator, Option<crate::Error>);
+    }
+}

@@ -1,26 +1,16 @@
+// Usefull for StoreAccess
+// #![feature(type_alias_impl_trait)]
+
 pub mod error;
 pub mod observer;
+pub mod pipeline;
 pub mod traits;
 
 pub use error::{Error, NetworkError, ParseError};
 pub use observer::{Observable, Observer, ObserverList};
+pub use pipeline::subscription_list::SubscriptionList;
 pub use traits::subscription::Subscription;
+pub use traits::video::Video;
 
-use async_trait::async_trait;
-
-pub struct AnyVideo {}
-
-/// A [`Video`] that can come from any website.
-#[async_trait]
-pub trait Video {
-    type Subscription;
-    type Rating;
-    type Thumbnail;
-
-    async fn url(&self) -> String;
-    async fn title(&self) -> String;
-    async fn subscription(&self) -> Self::Subscription;
-    async fn uploaded(&self) -> chrono::NaiveDateTime;
-    async fn rating(&self) -> Self::Rating;
-    async fn thumbnail(&self) -> Self::Thumbnail;
-}
+use pipeline::video_store::VideoStore;
+use traits::generator::Generator;

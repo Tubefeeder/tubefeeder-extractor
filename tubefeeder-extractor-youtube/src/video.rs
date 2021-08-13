@@ -1,72 +1,49 @@
+use crate::structure::*;
 use crate::subscription::YTSubscription;
 
-use tf_core::Video;
-
-use async_trait::async_trait;
-use chrono::NaiveDateTime;
-use rusty_pipe::extractors::{YTStreamExtractor, YTStreamInfoItemExtractor};
-
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct YTVideo {
-    url: String,
-    title: String,
-    subscription: YTSubscription,
-    uploaded: NaiveDateTime,
+    pub(crate) url: String,
+    pub(crate) title: String,
+    pub(crate) uploaded: chrono::NaiveDateTime,
+    pub(crate) subscription: YTSubscription,
 }
 
-impl YTVideo {
-    pub(crate) async fn from_extractor(
-        subscription: YTSubscription,
-        extractor: YTStreamInfoItemExtractor,
-    ) -> Result<Self, tf_core::Error> {
-        let url = extractor
-            .url()
-            .map_err(|e| tf_core::Error::from(tf_core::ParseError(format!("{}", e))))?;
-        let title = extractor
-            .name()
-            .map_err(|e| tf_core::Error::from(tf_core::ParseError(format!("{}", e))))?;
-
-        let uploaded = if let Ok(id) = extractor.video_id() {
-            if let Ok(stream_extractor) = YTStreamExtractor::new(&id, crate::Downloader {}).await {
-                stream_extractor
-                    .upload_date()
-                    .map(|d| d.and_hms(0, 0, 0))
-                    .map_err(|e| tf_core::Error::from(tf_core::ParseError(format!("{}", e))))
-                    .unwrap_or(NaiveDateTime::from_timestamp(0, 0))
-            } else {
-                NaiveDateTime::from_timestamp(0, 0)
-            }
-        } else {
-            NaiveDateTime::from_timestamp(0, 0)
-        };
-
-        Ok(YTVideo {
-            url,
-            title,
-            subscription,
-            uploaded,
-        })
-    }
-}
-
-#[async_trait]
-impl Video for YTVideo {
+impl tf_core::Video for YTVideo {
     type Subscription = YTSubscription;
-    type Rating = ();
-    type Thumbnail = ();
 
-    async fn url(&self) -> String {
+    fn url(&self) -> String {
         self.url.clone()
     }
-    async fn title(&self) -> String {
+
+    fn title(&self) -> String {
         self.title.clone()
     }
-    async fn subscription(&self) -> Self::Subscription {
+
+    fn subscription(&self) -> Self::Subscription {
         self.subscription.clone()
     }
-    async fn uploaded(&self) -> chrono::NaiveDateTime {
+
+    fn uploaded(&self) -> chrono::NaiveDateTime {
         self.uploaded.clone()
     }
-    async fn rating(&self) -> Self::Rating {}
-    async fn thumbnail(&self) -> Self::Thumbnail {}
+}
+
+impl From<Feed> for Vec<YTVideo> {
+    fn from(feed: Feed) -> Self {
+        feed.entries.into_iter().map(|e| e.into()).collect()
+    }
+}
+
+impl From<Entry> for YTVideo {
+    fn from(e: Entry) -> Self {
+        let subscription = YTSubscription::new(e.author.uri.split("/").last().unwrap_or(""));
+
+        YTVideo {
+            url: e.link.href.to_string(),
+            title: e.title,
+            subscription,
+            uploaded: e.published,
+        }
+    }
 }
