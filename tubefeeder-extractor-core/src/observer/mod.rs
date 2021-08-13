@@ -14,7 +14,6 @@ use mockall::predicate::*;
 #[cfg(test)]
 use mockall::*;
 
-
 /// A [`Observer`] observing a [`Observable<T>`].
 /// `T` is the message being sent from the [`Observable<T>`] to the [`Observer<T>`].
 #[cfg_attr(test, automock)]
@@ -71,6 +70,12 @@ impl<T: Clone> ObserverList<T> {
                 }
             }
         })
+    }
+}
+
+impl<T> Default for ObserverList<T> {
+    fn default() -> Self {
+        ObserverList::new()
     }
 }
 

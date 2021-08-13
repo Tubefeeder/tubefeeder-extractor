@@ -22,3 +22,13 @@ where
         self.subscriptions.clone()
     }
 }
+
+impl<S, V> Default for SubscriptionList<S>
+where
+    V: Video<Subscription = S>,
+    S: Subscription<Video = V>,
+{
+    fn default() -> Self {
+        SubscriptionList::new()
+    }
+}

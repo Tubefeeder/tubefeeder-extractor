@@ -1,10 +1,12 @@
 use crate::Subscription;
 
 #[cfg(test)]
-use {crate::traits::subscription::MockSubscription, mockall::predicate::*, mockall::*};
+use {crate::mock::MockSubscription, mockall::predicate::*, mockall::*};
 
 /// A [`Video`] that can come from any website.
-pub trait Video: Clone {
+pub trait Video:
+    Clone + std::hash::Hash + std::cmp::Eq + std::marker::Send + std::marker::Sync
+{
     type Subscription: Subscription;
 
     fn url(&self) -> String;

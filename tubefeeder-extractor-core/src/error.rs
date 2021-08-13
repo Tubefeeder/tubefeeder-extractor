@@ -67,6 +67,6 @@ impl From<reqwest::Error> for Error {
             error: e,
         };
 
-        return Error::NetworkError(network_error);
+        Error::NetworkError(network_error)
     }
 }

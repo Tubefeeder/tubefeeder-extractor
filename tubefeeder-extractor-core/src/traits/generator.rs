@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 #[cfg(test)]
-use {crate::traits::video::MockVideo, mockall::predicate::*, mockall::*};
+use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 
 #[async_trait]
 pub trait Generator {

@@ -6,7 +6,7 @@ use std::sync::Mutex;
 
 use async_trait::async_trait;
 
-struct Merger<S, V> {
+pub(crate) struct Merger<S, V> {
     subscription_list: Arc<Mutex<SubscriptionList<S>>>,
     _phantom: std::marker::PhantomData<V>,
 }
@@ -27,8 +27,8 @@ where
 #[async_trait]
 impl<S, V> Generator for Merger<S, V>
 where
-    S: Subscription<Video = V> + std::marker::Send + std::marker::Sync,
-    V: Video<Subscription = S> + std::marker::Sync + std::marker::Send,
+    S: Subscription<Video = V>,
+    V: Video<Subscription = S>,
     <S as Subscription>::Iterator: std::marker::Send,
 {
     type Item = V;

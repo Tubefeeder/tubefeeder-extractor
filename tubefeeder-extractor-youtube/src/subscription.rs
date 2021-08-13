@@ -8,11 +8,11 @@ fn feed_url() -> String {
     #[cfg(test)]
     let url = format!("{}/{}/", mockito::server_url(), "youtube");
 
-    return url;
+    url
 }
 
 /// A [`Subscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct YTSubscription {
     /// The channel id.
     id: String,

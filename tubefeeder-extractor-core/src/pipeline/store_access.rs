@@ -11,15 +11,12 @@ pub(crate) struct StoreAccess<V, G> {
 
 impl<V, G> StoreAccess<V, G>
 where
-    V: 'static + Video + std::hash::Hash + std::cmp::Eq + std::marker::Sync + std::marker::Send,
-    G: Generator<Item = V> + std::marker::Send + std::marker::Sync + 'static,
+    V: 'static + Video,
+    G: Generator<Item = V>,
     <G as Generator>::Iterator: 'static,
 {
-    pub(crate) fn new(generator: G) -> Self {
-        StoreAccess {
-            store: Arc::new(Mutex::new(VideoStore::new())),
-            generator,
-        }
+    pub(crate) fn new(store: Arc<Mutex<VideoStore<V>>>, generator: G) -> Self {
+        StoreAccess { store, generator }
     }
 }
 
@@ -48,8 +45,8 @@ mod test {
     use chrono::{NaiveDate, NaiveDateTime};
 
     use super::*;
-    use crate::traits::generator::MockGenerator;
-    use crate::traits::video::MockVideo;
+    use crate::mock::MockGenerator;
+    use crate::mock::MockVideo;
 
     fn make_video(datetime: NaiveDateTime) -> MockVideo {
         let datetime_clone = datetime.clone();
@@ -73,7 +70,7 @@ mod test {
             )
         });
 
-        let store = StoreAccess::new(generator);
+        let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
         let result = store.generate().await;
 
@@ -102,7 +99,7 @@ mod test {
             )
         });
 
-        let store = StoreAccess::new(generator);
+        let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
         let result = store.generate().await;
 
@@ -141,7 +138,7 @@ mod test {
             )
         });
 
-        let store = StoreAccess::new(generator);
+        let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
         let result_1 = store.generate().await;
 

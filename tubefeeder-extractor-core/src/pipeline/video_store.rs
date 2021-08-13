@@ -33,7 +33,7 @@ impl<V: Hash + Clone + std::cmp::Eq> VideoStore<V> {
 
 #[cfg(test)]
 mod test {
-    use crate::traits::video::MockVideo;
+    use crate::mock::MockVideo;
     use chrono::{NaiveDate, NaiveDateTime};
 
     use super::*;

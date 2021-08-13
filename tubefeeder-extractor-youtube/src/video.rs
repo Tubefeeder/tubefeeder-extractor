@@ -1,7 +1,7 @@
 use crate::structure::*;
 use crate::subscription::YTSubscription;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct YTVideo {
     pub(crate) url: String,
     pub(crate) title: String,
@@ -25,7 +25,7 @@ impl tf_core::Video for YTVideo {
     }
 
     fn uploaded(&self) -> chrono::NaiveDateTime {
-        self.uploaded.clone()
+        self.uploaded
     }
 }
 
@@ -37,7 +37,7 @@ impl From<Feed> for Vec<YTVideo> {
 
 impl From<Entry> for YTVideo {
     fn from(e: Entry) -> Self {
-        let subscription = YTSubscription::new(e.author.uri.split("/").last().unwrap_or(""));
+        let subscription = YTSubscription::new(e.author.uri.split('/').last().unwrap_or(""));
 
         YTVideo {
             url: e.link.href.to_string(),
