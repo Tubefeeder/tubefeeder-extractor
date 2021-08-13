@@ -1,11 +1,8 @@
 //! The pipeline of videos.
 //! This currently contains
 //!
-//! - [`Merger`][merger::Merger]
-//! - [`Pipeline`][pipeline::Pipeline]
-//! - [`StoreAccess`][store_access::StoreAccess]
+//! - [`Pipeline`][pipe::Pipeline]
 //! - [`SubscriptionList`][subscription_list::SubscriptionList]
-//! - [`VideoStore`][video_store::VideoStore]
 
 pub(crate) mod merger;
 pub mod pipe;

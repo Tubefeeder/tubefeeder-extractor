@@ -11,7 +11,7 @@ fn feed_url() -> String {
     url
 }
 
-/// A [`Subscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
+/// A [`YTSubscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct YTSubscription {
     /// The channel id.
@@ -19,12 +19,12 @@ pub struct YTSubscription {
 }
 
 impl YTSubscription {
-    /// Create a new [`Subscription`] using the given channel id.
+    /// Create a new [`YTSubscription`] using the given channel id.
     pub fn new(id: &str) -> Self {
         YTSubscription { id: id.to_owned() }
     }
 
-    /// Get the channel id of the [`Subscription`].
+    /// Get the channel id of the [`YTSubscription`].
     pub fn id(&self) -> String {
         self.id.clone()
     }

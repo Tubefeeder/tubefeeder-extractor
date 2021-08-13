@@ -5,8 +5,8 @@ use crate::Video;
 #[cfg(test)]
 use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 
-/// A [`Subscription`] to a channel. The [`Subscription`] must be able to generate a [`Generator`]
-/// that can fetch the [`Video`][crate::Video]s of the [`Subscription`].
+/// A [`Subscription`] to a channel. The [`Subscription`][Subscription] must be able to generate
+/// [`Video`][crate::Video]s asyncronously.
 #[async_trait]
 pub trait Subscription: Clone + std::marker::Send + std::marker::Sync {
     type Video: crate::Video;

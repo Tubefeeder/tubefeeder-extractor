@@ -4,7 +4,7 @@
 //!
 //! - [`Generator`][generator::Generator]
 //! - [`Subscription`][subscription::Subscription]
-//! - [`Video`][subscription::Video]
+//! - [`Video`][video::Video]
 
 pub mod generator;
 pub mod subscription;
