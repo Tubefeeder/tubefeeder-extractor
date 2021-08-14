@@ -56,7 +56,10 @@ impl From<Feed> for Vec<YTVideo> {
 
 impl From<Entry> for YTVideo {
     fn from(e: Entry) -> Self {
-        let subscription = YTSubscription::new(e.author.uri.split('/').last().unwrap_or(""));
+        let subscription = YTSubscription::new_with_name(
+            e.author.uri.split('/').last().unwrap_or(""),
+            &e.author.name,
+        );
 
         YTVideo {
             url: e.link.href.to_string(),

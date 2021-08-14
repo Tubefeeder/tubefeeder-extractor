@@ -35,17 +35,33 @@ fn feed_url() -> String {
 pub struct YTSubscription {
     /// The channel id.
     id: String,
+    name: Option<String>,
 }
 
 impl YTSubscription {
     /// Create a new [`YTSubscription`] using the given channel id.
     pub fn new(id: &str) -> Self {
-        YTSubscription { id: id.to_owned() }
+        YTSubscription {
+            id: id.to_owned(),
+            name: None,
+        }
+    }
+
+    pub fn new_with_name(id: &str, name: &str) -> Self {
+        YTSubscription {
+            id: id.to_owned(),
+            name: Some(name.to_owned()),
+        }
     }
 
     /// Get the channel id of the [`YTSubscription`].
     pub fn id(&self) -> String {
         self.id.clone()
+    }
+
+    /// Get the name id of the [`YTSubscription`].
+    pub fn name(&self) -> Option<String> {
+        self.name.clone()
     }
 }
 
@@ -85,7 +101,7 @@ mod test {
     use tf_core::Subscription;
 
     fn expected_videos() -> Vec<YTVideo> {
-        let subscription = YTSubscription::new("ThisIsAChannelId");
+        let subscription = YTSubscription::new_with_name("ThisIsAChannelId", "ChannelName");
         let video1 = YTVideo {
             url: "https://www.youtube.com/watch?v=videoid1".to_string(),
             title: "VIDEO 1 !! Click".to_string(),

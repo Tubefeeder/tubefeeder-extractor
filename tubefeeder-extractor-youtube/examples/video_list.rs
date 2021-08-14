@@ -23,8 +23,10 @@ use tf_core::{Generator, Pipeline, Video};
 use tf_yt::subscription::YTSubscription;
 use tf_yt::video::YTVideo;
 
-const SUBSCRIPTION_IDS: &'static [&'static str] =
-    &["UCld68syR8Wi-GY_n4CaoJGA", "UCVls1GmFKf6WlTraIb_IaJg"];
+const SUBSCRIPTION_IDS: &'static [&'static str] = &[
+    "UCld68syR8Wi-GY_n4CaoJGA", // Brodie Robertson
+    "UCVls1GmFKf6WlTraIb_IaJg", // DistroTube
+];
 
 #[tokio::main(flavor = "current_thread")]
 pub async fn main() {
@@ -38,6 +40,12 @@ pub async fn main() {
 
     println!("VIDEOS: ");
     for video in pipeline.generate().await.0 {
-        println!("{}", video.lock().unwrap().title());
+        let video = video.lock().unwrap();
+        let subscription = video.subscription();
+        println!(
+            "{}: {}",
+            subscription.name().unwrap_or(subscription.id()),
+            video.title()
+        );
     }
 }
