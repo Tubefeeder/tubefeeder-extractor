@@ -110,17 +110,19 @@ mod test {
         let dates_clone = dates.clone();
 
         let mut subscription1 = MockSubscription::new();
-        subscription1.expect_generate().returning(move || {
-            (
-                dates_clone
-                    .clone()
-                    .into_iter()
-                    .map(|d| make_video(d))
-                    .collect::<Vec<_>>()
-                    .into_iter(),
-                None,
-            )
-        });
+        subscription1
+            .expect_generate_with_client()
+            .returning(move |_| {
+                (
+                    dates_clone
+                        .clone()
+                        .into_iter()
+                        .map(|d| make_video(d))
+                        .collect::<Vec<_>>()
+                        .into_iter(),
+                    None,
+                )
+            });
         subscription1
             .expect_clone()
             .returning(move || make_subscription(dates.clone()));

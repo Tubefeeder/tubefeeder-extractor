@@ -67,6 +67,7 @@ mock! {
     impl Subscription for Subscription {
         type Video = MockVideo;
         type Iterator = std::vec::IntoIter<MockVideo>;
+        async fn generate_with_client(&self, client: &reqwest::Client) -> (<Self as Subscription>::Iterator, Option<crate::Error>);
         async fn generate(&self) -> (<Self as Subscription>::Iterator, Option<crate::Error>);
     }
 }
