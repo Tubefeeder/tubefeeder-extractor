@@ -25,6 +25,7 @@ use std::sync::Mutex;
 
 use async_trait::async_trait;
 
+#[derive(Clone)]
 pub(crate) struct Merger<S, V> {
     subscription_list: Arc<Mutex<SubscriptionList<S>>>,
     _phantom: std::marker::PhantomData<V>,
@@ -46,9 +47,9 @@ where
 #[async_trait]
 impl<S, V> Generator for Merger<S, V>
 where
-    S: Subscription<Video = V>,
+    S: 'static + Subscription<Video = V>,
     V: Video<Subscription = S>,
-    <S as Subscription>::Iterator: std::marker::Send,
+    <S as Subscription>::Iterator: 'static + std::marker::Send,
 {
     type Item = V;
 
@@ -56,11 +57,21 @@ where
 
     async fn generate(&self) -> (Self::Iterator, Option<crate::Error>) {
         // TODO: Error Handling
-        // TODO: More efficient (e.g. with Heap)
         let subscriptions = self.subscription_list.lock().unwrap().subscriptions();
-        let futures = subscriptions.iter().map(|s| s.generate());
-        let results = futures::future::join_all(futures).await;
+        log::debug!("Starting getting subscriptions");
+        let client = reqwest::Client::builder()
+            .tcp_keepalive(Some(std::time::Duration::from_secs(10)))
+            .build()
+            .unwrap();
+        let results = futures::future::join_all(
+            subscriptions
+                .iter()
+                .map(|s| s.generate_with_client(&client)),
+        )
+        .await;
+        log::debug!("Finished getting subscriptions");
 
+        // TODO: More efficient (e.g. with Heap)
         let mut videos = results
             .into_iter()
             .map(|res| res.0.collect::<Vec<_>>())
@@ -77,8 +88,8 @@ mod test {
 
     use super::*;
 
-    use crate::traits::subscription::MockSubscription;
-    use crate::traits::video::MockVideo;
+    use crate::mock::MockSubscription;
+    use crate::mock::MockVideo;
 
     use chrono::NaiveDate;
     use chrono::NaiveDateTime;

@@ -17,6 +17,9 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod structure;
-pub mod subscription;
-pub mod video;
+mod structure;
+mod subscription;
+mod video;
+
+pub use subscription::YTSubscription;
+pub use video::YTVideo;

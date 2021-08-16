@@ -69,8 +69,18 @@ impl YTSubscription {
 impl tf_core::Subscription for YTSubscription {
     type Video = YTVideo;
     type Iterator = std::vec::IntoIter<Self::Video>;
-    async fn generate(&self) -> (Self::Iterator, Option<tf_core::Error>) {
-        let result = reqwest::get(format!("{}{}", feed_url(), self.id())).await;
+    async fn generate_with_client(
+        &self,
+        client: &reqwest::Client,
+    ) -> (Self::Iterator, Option<tf_core::Error>) {
+        log::debug!(
+            "Generating YT videos from channel {}",
+            self.name().unwrap_or(self.id())
+        );
+        let result = client
+            .get(format!("{}{}", feed_url(), self.id()))
+            .send()
+            .await;
         if let Err(e) = result {
             return (vec![].into_iter(), Some(e.into()));
         }
@@ -90,6 +100,11 @@ impl tf_core::Subscription for YTSubscription {
                 Some(tf_core::ParseError(format!("channel {}", self.id())).into()),
             );
         }
+
+        log::debug!(
+            "Finished Generating YT videos from channel {}",
+            self.name().unwrap_or(self.id())
+        );
 
         (Vec::<YTVideo>::from(parsed.unwrap()).into_iter(), None)
     }

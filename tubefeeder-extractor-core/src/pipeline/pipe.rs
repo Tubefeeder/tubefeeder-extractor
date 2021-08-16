@@ -23,6 +23,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 
+#[derive(Clone)]
 pub struct Pipeline<S, V> {
     subscription_list: Arc<Mutex<SubscriptionList<S>>>,
     _video_store: Arc<Mutex<VideoStore<V>>>,
@@ -32,7 +33,7 @@ pub struct Pipeline<S, V> {
 
 impl<S, V> Pipeline<S, V>
 where
-    S: Subscription<Video = V>,
+    S: 'static + Subscription<Video = V>,
     V: 'static + Video<Subscription = S>,
     <S as Subscription>::Iterator: std::marker::Send,
 {
@@ -65,7 +66,7 @@ where
 {
     type Item = Arc<Mutex<V>>;
 
-    type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item>>;
+    type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
 
     async fn generate(&self) -> (Self::Iterator, Option<crate::Error>) {
         self.store_access.generate().await
@@ -74,7 +75,7 @@ where
 
 impl<S, V> Default for Pipeline<S, V>
 where
-    S: Subscription<Video = V>,
+    S: 'static + Subscription<Video = V>,
     V: 'static + Video<Subscription = S>,
     <S as Subscription>::Iterator: std::marker::Send,
 {

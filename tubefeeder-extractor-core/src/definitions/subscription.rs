@@ -30,7 +30,13 @@ use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 pub trait Subscription: Clone + std::marker::Send + std::marker::Sync {
     type Video: crate::Video;
     type Iterator: Iterator<Item = Self::Video>;
-    async fn generate(&self) -> (Self::Iterator, Option<crate::Error>);
+    async fn generate(&self) -> (Self::Iterator, Option<crate::Error>) {
+        self.generate_with_client(&reqwest::Client::new()).await
+    }
+    async fn generate_with_client(
+        &self,
+        client: &reqwest::Client,
+    ) -> (Self::Iterator, Option<crate::Error>);
 }
 
 #[async_trait]

@@ -23,6 +23,7 @@ use crate::{Generator, Video, VideoStore};
 
 use async_trait::async_trait;
 
+#[derive(Clone)]
 pub(crate) struct StoreAccess<V, G> {
     store: Arc<Mutex<VideoStore<V>>>,
     generator: G,
@@ -44,18 +45,18 @@ impl<V, G> Generator for StoreAccess<V, G>
 where
     V: 'static + Video + std::hash::Hash + std::cmp::Eq + std::marker::Sync + std::marker::Send,
     G: Generator<Item = V> + std::marker::Send + std::marker::Sync + 'static,
-    <G as Generator>::Iterator: 'static,
+    <G as Generator>::Iterator: 'static + std::marker::Send,
 {
     type Item = Arc<Mutex<V>>;
     // Better when https://github.com/rust-lang/rust/issues/63063 is stable.
     // type Iterator = impl Iterator<Item = <Self as Generator>::Item>;
-    type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item>>;
+    type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
 
     async fn generate(&self) -> (Self::Iterator, Option<crate::Error>) {
         let store = self.store.clone();
         let (gen_iter, gen_err) = self.generator.generate().await;
         let map = gen_iter.map(move |v| store.lock().unwrap().get(v));
-        (Box::new(map), gen_err)
+        (Box::new(map) as <Self as Generator>::Iterator, gen_err)
     }
 }
 
