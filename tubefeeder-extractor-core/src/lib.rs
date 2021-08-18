@@ -25,11 +25,13 @@ pub mod error;
 pub mod observer;
 pub mod pipeline;
 
+pub use definitions::expanded_video::ExpandedVideo;
 pub use definitions::generator::Generator;
 pub use definitions::subscription::Subscription;
 pub use definitions::video::Video;
 pub use error::{Error, NetworkError, ParseError};
 pub use observer::{Observable, Observer, ObserverList};
+pub use pipeline::expander::Expander;
 pub use pipeline::pipe::Pipeline;
 pub use pipeline::subscription_list::SubscriptionList;
 
@@ -42,4 +44,8 @@ mod mock {
     pub(crate) use crate::definitions::generator::MockGenerator;
     pub(crate) use crate::definitions::subscription::MockSubscription;
     pub(crate) use crate::definitions::video::MockVideo;
+}
+
+pub mod prelude {
+    pub use crate::{Generator, Subscription, Video};
 }

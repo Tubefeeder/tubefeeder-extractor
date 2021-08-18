@@ -17,7 +17,10 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::{Generator, Merger, StoreAccess, Subscription, SubscriptionList, Video, VideoStore};
+use crate::{
+    ExpandedVideo, Expander, Generator, Merger, StoreAccess, Subscription, SubscriptionList, Video,
+    VideoStore,
+};
 
 use std::sync::{Arc, Mutex};
 
@@ -26,9 +29,9 @@ use async_trait::async_trait;
 #[derive(Clone)]
 pub struct Pipeline<S, V> {
     subscription_list: Arc<Mutex<SubscriptionList<S>>>,
-    _video_store: Arc<Mutex<VideoStore<V>>>,
+    _video_store: Arc<Mutex<VideoStore<ExpandedVideo<V>>>>,
 
-    store_access: StoreAccess<V, Merger<S, V>>,
+    store_access: StoreAccess<ExpandedVideo<V>, Expander<V, Merger<S, V>>>,
 }
 
 impl<S, V> Pipeline<S, V>
@@ -42,7 +45,8 @@ where
         let _video_store = Arc::new(Mutex::new(VideoStore::new()));
 
         let merger = Merger::new(subscription_list.clone());
-        let store_access = StoreAccess::new(_video_store.clone(), merger);
+        let expander = Expander::new(merger);
+        let store_access = StoreAccess::new(_video_store.clone(), expander);
 
         Pipeline {
             subscription_list,
@@ -64,7 +68,7 @@ where
     V: 'static + Video<Subscription = S>,
     <S as Subscription>::Iterator: std::marker::Send,
 {
-    type Item = Arc<Mutex<V>>;
+    type Item = Arc<Mutex<ExpandedVideo<V>>>;
 
     type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
 

@@ -1,0 +1,21 @@
+[package]
+name = "tubefeeder-extractor-join"
+version = "0.0.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tf_core = { package = "tubefeeder-extractor-core", path = "../tubefeeder-extractor-core" }
+tf_yt = { package = "tubefeeder-extractor-youtube", path = "../tubefeeder-extractor-youtube" }
+tf_test = { package = "tubefeeder-extractor-test", path = "../tubefeeder-extractor-test" }
+
+async-trait = "^0.1"
+chrono = { version = "^0.4", features = [ "serde" ] }
+reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
+tokio = { version = "^1.9", features = [ "macros" ] }
+
+log = "^0.4"
+
+[dev-dependencies]
+env_logger =  "^0.9"

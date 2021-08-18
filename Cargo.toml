@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "tubefeeder-extractor-join",
     "tubefeeder-extractor-core",
-    "tubefeeder-extractor-youtube"
+    "tubefeeder-extractor-youtube",
+    "tubefeeder-extractor-test"
 ]

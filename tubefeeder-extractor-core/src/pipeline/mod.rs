@@ -23,6 +23,7 @@
 //! - [`Pipeline`][pipe::Pipeline]
 //! - [`SubscriptionList`][subscription_list::SubscriptionList]
 
+pub(crate) mod expander;
 pub(crate) mod merger;
 pub mod pipe;
 pub(crate) mod store_access;

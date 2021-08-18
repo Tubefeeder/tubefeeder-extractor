@@ -21,10 +21,12 @@
 //!
 //! This contains:
 //!
+//! - [`ExpandedVideo`][expanded_video::ExpandedVideo]
 //! - [`Generator`][generator::Generator]
 //! - [`Subscription`][subscription::Subscription]
 //! - [`Video`][video::Video]
 
+pub mod expanded_video;
 pub mod generator;
 pub mod subscription;
 pub mod video;
