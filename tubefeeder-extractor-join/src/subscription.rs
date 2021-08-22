@@ -19,16 +19,20 @@
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum AnySubscription {
+    #[cfg(feature = "youtube")]
     Youtube(tf_yt::YTSubscription),
+    #[cfg(feature = "testPlatform")]
     Test(tf_test::TestSubscription),
 }
 
+#[cfg(feature = "youtube")]
 impl From<tf_yt::YTSubscription> for AnySubscription {
     fn from(s: tf_yt::YTSubscription) -> Self {
         AnySubscription::Youtube(s)
     }
 }
 
+#[cfg(feature = "testPlatform")]
 impl From<tf_test::TestSubscription> for AnySubscription {
     fn from(s: tf_test::TestSubscription) -> Self {
         AnySubscription::Test(s)

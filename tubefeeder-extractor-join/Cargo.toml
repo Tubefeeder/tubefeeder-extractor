@@ -14,8 +14,14 @@ async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
 tokio = { version = "^1.9", features = [ "macros" ] }
+futures = "^0.3"
 
 log = "^0.4"
 
 [dev-dependencies]
 env_logger =  "^0.9"
+
+[features]
+default = ["youtube"]
+youtube = []
+testPlatform = []

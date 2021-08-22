@@ -23,10 +23,15 @@ use tf_core::{Generator, Video};
 use tf_join::AnySubscription;
 use tf_join::AnyVideo;
 use tf_join::Joiner;
+
+#[cfg(feature = "testPlatform")]
 use tf_test::TestSubscription;
+#[cfg(feature = "youtube")]
 use tf_yt::YTSubscription;
 
+#[cfg(feature = "youtube")]
 const YT_SUBSCRIPTION_IDS: &'static [&'static str] = &["UCj1VqrHhDte54oLgPG4xpuQ"];
+#[cfg(feature = "testPlatform")]
 const TEST_SUBSCRIPTION_NAMES: &'static [&'static str] = &["Test1", "Test2"];
 
 #[tokio::main(flavor = "current_thread")]
@@ -35,11 +40,13 @@ pub async fn main() {
     log::info!("Logging enabled");
     let join = Joiner::new();
 
+    #[cfg(feature = "youtube")]
     YT_SUBSCRIPTION_IDS
         .iter()
         .map(|id| YTSubscription::new(id).into())
         .for_each(|sub: AnySubscription| join.subscribe(sub.into()));
 
+    #[cfg(feature = "testPlatform")]
     TEST_SUBSCRIPTION_NAMES
         .iter()
         .map(|name| TestSubscription::new(name).into())
@@ -48,6 +55,7 @@ pub async fn main() {
     println!("VIDEOS: ");
     for video in join.generate().await.0.take(100) {
         match video {
+            #[cfg(feature = "youtube")]
             AnyVideo::Youtube(v) => {
                 let yt_v = v.lock().unwrap();
                 let sub = yt_v.subscription();
@@ -57,6 +65,7 @@ pub async fn main() {
                     yt_v.title()
                 );
             }
+            #[cfg(feature = "testPlatform")]
             AnyVideo::Test(v) => {
                 let test_v = v.lock().unwrap();
                 let sub = test_v.subscription();

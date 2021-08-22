@@ -17,6 +17,8 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::{future::Future, pin::Pin};
+
 use tf_core::{Generator, Pipeline};
 
 use async_trait::async_trait;
@@ -24,23 +26,29 @@ use async_trait::async_trait;
 use crate::{AnySubscription, AnyVideo};
 
 pub struct Joiner {
+    #[cfg(feature = "youtube")]
     yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,
+    #[cfg(feature = "testPlatform")]
     test_pipeline: Pipeline<tf_test::TestSubscription, tf_test::TestVideo>,
 }
 
 impl Joiner {
     pub fn new() -> Self {
         Joiner {
+            #[cfg(feature = "youtube")]
             yt_pipeline: Pipeline::new(),
+            #[cfg(feature = "testPlatform")]
             test_pipeline: Pipeline::new(),
         }
     }
 
     pub fn subscribe(&self, subscription: AnySubscription) {
         match subscription {
+            #[cfg(feature = "youtube")]
             AnySubscription::Youtube(s) => {
                 self.yt_pipeline.subscription_list().lock().unwrap().add(s)
             }
+            #[cfg(feature = "testPlatform")]
             AnySubscription::Test(s) => self
                 .test_pipeline
                 .subscription_list()
@@ -59,18 +67,46 @@ impl Generator for Joiner {
 
     async fn generate(&self) -> (Self::Iterator, Option<tf_core::Error>) {
         // TODO: Error handling
-        let ((yt_iter, yt_err), (test_iter, _test_err)) =
-            tokio::join!(self.yt_pipeline.generate(), self.test_pipeline.generate());
-
-        let mut yt_any: Vec<AnyVideo> = yt_iter.map(|v| v.into()).collect();
-        let mut test_any: Vec<AnyVideo> = test_iter.map(|v| v.into()).collect();
-
-        yt_any.append(&mut test_any);
-
         // TODO: More efficient
-        yt_any.sort_by_cached_key(|v| v.uploaded());
-        yt_any.reverse();
+        let mut generators: Vec<
+            Pin<
+                Box<
+                    dyn Future<
+                            Output = (
+                                Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>,
+                                Option<tf_core::Error>,
+                            ),
+                        > + std::marker::Send,
+                >,
+            >,
+        > = vec![];
+        #[cfg(feature = "youtube")]
+        generators.push(Box::pin(async {
+            let (iter, err) = self.yt_pipeline.generate().await;
+            let iter_mapped = iter.map(|v| v.into());
+            (
+                Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>,
+                err,
+            )
+        }));
+        #[cfg(feature = "testPlatform")]
+        generators.push(Box::pin(async {
+            let (iter, err) = self.test_pipeline.generate().await;
+            let iter_mapped = iter.map(|v| v.into());
+            (
+                Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>,
+                err,
+            )
+        }));
 
-        (yt_any.into_iter(), yt_err)
+        let results = futures::future::join_all(generators).await;
+        let mut videos: Vec<AnyVideo> = results
+            .into_iter()
+            .map(|(i, _e)| i.collect())
+            .collect::<Vec<Vec<AnyVideo>>>()
+            .concat();
+        videos.sort_by_cached_key(|v| v.uploaded());
+        videos.reverse();
+        (videos.into_iter(), None)
     }
 }
