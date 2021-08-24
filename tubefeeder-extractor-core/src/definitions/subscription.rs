@@ -17,9 +17,11 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::sync::{Arc, Mutex};
+
 use async_trait::async_trait;
 
-use crate::Video;
+use crate::{ErrorStore, Video};
 
 #[cfg(test)]
 use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
@@ -30,13 +32,15 @@ use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 pub trait Subscription: Clone + std::marker::Send + std::marker::Sync {
     type Video: crate::Video;
     type Iterator: Iterator<Item = Self::Video>;
-    async fn generate(&self) -> (Self::Iterator, Option<crate::Error>) {
-        self.generate_with_client(&reqwest::Client::new()).await
+    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
+        self.generate_with_client(errors, &reqwest::Client::new())
+            .await
     }
     async fn generate_with_client(
         &self,
+        errors: Arc<Mutex<ErrorStore>>,
         client: &reqwest::Client,
-    ) -> (Self::Iterator, Option<crate::Error>);
+    ) -> Self::Iterator;
 }
 
 #[async_trait]
@@ -49,8 +53,8 @@ where
 
     type Iterator = <S as Subscription>::Iterator;
 
-    async fn generate(&self) -> (<S as Subscription>::Iterator, Option<crate::Error>) {
-        self.generate().await
+    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> <S as Subscription>::Iterator {
+        self.generate(errors).await
     }
 }
 
@@ -67,7 +71,7 @@ mock! {
     impl Subscription for Subscription {
         type Video = MockVideo;
         type Iterator = std::vec::IntoIter<MockVideo>;
-        async fn generate_with_client(&self, client: &reqwest::Client) -> (<Self as Subscription>::Iterator, Option<crate::Error>);
-        async fn generate(&self) -> (<Self as Subscription>::Iterator, Option<crate::Error>);
+        async fn generate_with_client(&self, errors: Arc<Mutex<ErrorStore>>, client: &reqwest::Client) -> <Self as Subscription>::Iterator;
+        async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> <Self as Subscription>::Iterator;
     }
 }

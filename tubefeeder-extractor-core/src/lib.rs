@@ -20,16 +20,16 @@
 // Usefull for StoreAccess in the future.
 // #![feature(type_alias_impl_trait)]
 
-pub mod definitions;
-pub mod error;
-pub mod observer;
-pub mod pipeline;
+mod definitions;
+mod error;
+mod observer;
+mod pipeline;
 
 pub use definitions::expanded_video::ExpandedVideo;
 pub use definitions::generator::Generator;
 pub use definitions::subscription::Subscription;
 pub use definitions::video::Video;
-pub use error::{Error, NetworkError, ParseError};
+pub use error::{Error, ErrorStore, NetworkError, ParseError};
 pub use observer::{Observable, Observer, ObserverList};
 pub use pipeline::expander::Expander;
 pub use pipeline::pipe::Pipeline;

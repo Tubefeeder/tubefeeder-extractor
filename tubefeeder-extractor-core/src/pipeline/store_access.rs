@@ -19,7 +19,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::{Generator, Video, VideoStore};
+use crate::{ErrorStore, Generator, Video, VideoStore};
 
 use async_trait::async_trait;
 
@@ -52,11 +52,11 @@ where
     // type Iterator = impl Iterator<Item = <Self as Generator>::Item>;
     type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
 
-    async fn generate(&self) -> (Self::Iterator, Option<crate::Error>) {
+    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
         let store = self.store.clone();
-        let (gen_iter, gen_err) = self.generator.generate().await;
+        let gen_iter = self.generator.generate(errors).await;
         let map = gen_iter.map(move |v| store.lock().unwrap().get(v));
-        (Box::new(map) as <Self as Generator>::Iterator, gen_err)
+        Box::new(map) as <Self as Generator>::Iterator
     }
 }
 
@@ -79,26 +79,21 @@ mod test {
     #[tokio::test]
     async fn store_access_no_duplicates() {
         let mut generator = MockGenerator::new();
-        generator.expect_generate().returning(|| {
-            (
-                vec![
-                    make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                    make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
-                ]
-                .into_iter(),
-                None,
-            )
+        generator.expect_generate().returning(|_| {
+            vec![
+                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
+                make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
+            ]
+            .into_iter()
         });
 
         let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
-        let result = store.generate().await;
+        let errors = Arc::new(Mutex::new(ErrorStore::new()));
+        let mut result = store.generate(errors).await;
 
-        assert!(result.1.is_none());
-
-        let mut iter = result.0;
-        let arc1 = iter.next();
-        let arc2 = iter.next();
+        let arc1 = result.next();
+        let arc2 = result.next();
 
         assert!(arc1.is_some());
         assert!(arc2.is_some());
@@ -108,26 +103,21 @@ mod test {
     #[tokio::test]
     async fn store_access_one_generate_duplicates() {
         let mut generator = MockGenerator::new();
-        generator.expect_generate().returning(|| {
-            (
-                vec![
-                    make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                    make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                ]
-                .into_iter(),
-                None,
-            )
+        generator.expect_generate().returning(|_| {
+            vec![
+                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
+                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
+            ]
+            .into_iter()
         });
 
         let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
-        let result = store.generate().await;
+        let errors = Arc::new(Mutex::new(ErrorStore::new()));
+        let mut result = store.generate(errors).await;
 
-        assert!(result.1.is_none());
-
-        let mut iter = result.0;
-        let arc1 = iter.next();
-        let arc2 = iter.next();
+        let arc1 = result.next();
+        let arc2 = result.next();
 
         assert!(arc1.is_some());
         assert!(arc2.is_some());
@@ -137,40 +127,33 @@ mod test {
     #[tokio::test]
     async fn store_access_two_generate_duplicates() {
         let mut generator = MockGenerator::new();
-        generator.expect_generate().times(1).returning(|| {
-            (
-                vec![
-                    make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                    make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
-                ]
-                .into_iter(),
-                None,
-            )
+        generator.expect_generate().times(1).returning(|_| {
+            vec![
+                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
+                make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
+            ]
+            .into_iter()
         });
-        generator.expect_generate().times(1).returning(|| {
-            (
-                vec![
-                    make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                    make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
-                ]
-                .into_iter(),
-                None,
-            )
+        generator.expect_generate().times(1).returning(|_| {
+            vec![
+                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
+                make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
+            ]
+            .into_iter()
         });
 
         let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
-        let result_1 = store.generate().await;
+        let errors = Arc::new(Mutex::new(ErrorStore::new()));
+        let mut result_1 = store.generate(errors.clone()).await;
 
-        let mut iter_1 = result_1.0;
-        let arc1_1 = iter_1.next();
-        let arc1_2 = iter_1.next();
+        let arc1_1 = result_1.next();
+        let arc1_2 = result_1.next();
 
-        let result_2 = store.generate().await;
+        let mut result_2 = store.generate(errors).await;
 
-        let mut iter_2 = result_2.0;
-        let arc2_1 = iter_2.next();
-        let arc2_2 = iter_2.next();
+        let arc2_1 = result_2.next();
+        let arc2_2 = result_2.next();
 
         assert!(Arc::ptr_eq(&arc1_1.unwrap(), &arc2_1.unwrap()));
         assert!(Arc::ptr_eq(&arc1_2.unwrap(), &arc2_2.unwrap()));

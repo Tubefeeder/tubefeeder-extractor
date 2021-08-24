@@ -17,7 +17,7 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::Generator;
+use crate::{ErrorStore, Generator};
 use crate::{Subscription, SubscriptionList, Video};
 
 use std::sync::Arc;
@@ -55,8 +55,7 @@ where
 
     type Iterator = std::vec::IntoIter<V>;
 
-    async fn generate(&self) -> (Self::Iterator, Option<crate::Error>) {
-        // TODO: Error Handling
+    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
         let subscriptions = self.subscription_list.lock().unwrap().subscriptions();
         log::debug!("Starting getting subscriptions");
         let client = reqwest::Client::builder()
@@ -66,7 +65,7 @@ where
         let results = futures::future::join_all(
             subscriptions
                 .iter()
-                .map(|s| s.generate_with_client(&client)),
+                .map(|s| s.generate_with_client(errors.clone(), &client)),
         )
         .await;
         log::debug!("Finished getting subscriptions");
@@ -74,12 +73,12 @@ where
         // TODO: More efficient (e.g. with Heap)
         let mut videos = results
             .into_iter()
-            .map(|res| res.0.collect::<Vec<_>>())
+            .map(|res| res.collect::<Vec<_>>())
             .collect::<Vec<_>>()
             .concat();
         videos.sort_unstable_by_key(|v| v.uploaded());
         videos.reverse();
-        (videos.into_iter(), None)
+        videos.into_iter()
     }
 }
 
@@ -100,10 +99,10 @@ mod test {
             Arc::new(Mutex::new(SubscriptionList::new()));
         let merger: Merger<MockSubscription, MockVideo> = Merger::new(subscriptions);
 
-        let mut result = merger.generate().await;
+        let errors = Arc::new(Mutex::new(ErrorStore::new()));
+        let mut result = merger.generate(errors).await;
 
-        assert!(result.0.next().is_none());
-        assert!(result.1.is_none());
+        assert!(result.next().is_none());
     }
 
     fn make_subscription(dates: Vec<NaiveDateTime>) -> MockSubscription {
@@ -112,16 +111,13 @@ mod test {
         let mut subscription1 = MockSubscription::new();
         subscription1
             .expect_generate_with_client()
-            .returning(move |_| {
-                (
-                    dates_clone
-                        .clone()
-                        .into_iter()
-                        .map(|d| make_video(d))
-                        .collect::<Vec<_>>()
-                        .into_iter(),
-                    None,
-                )
+            .returning(move |_e, _c| {
+                dates_clone
+                    .clone()
+                    .into_iter()
+                    .map(|d| make_video(d))
+                    .collect::<Vec<_>>()
+                    .into_iter()
             });
         subscription1
             .expect_clone()
@@ -152,12 +148,12 @@ mod test {
             .unwrap()
             .add(make_subscription(vec![date_video1, date_video2]));
 
-        let mut result = merger.generate().await;
+        let errors = Arc::new(Mutex::new(ErrorStore::new()));
+        let mut result = merger.generate(errors).await;
 
-        assert_eq!(result.0.next().unwrap().uploaded(), date_video1);
-        assert_eq!(result.0.next().unwrap().uploaded(), date_video2);
-        assert!(result.0.next().is_none());
-        assert!(result.1.is_none());
+        assert_eq!(result.next().unwrap().uploaded(), date_video1);
+        assert_eq!(result.next().unwrap().uploaded(), date_video2);
+        assert!(result.next().is_none());
     }
 
     #[tokio::test]
@@ -182,13 +178,13 @@ mod test {
             .unwrap()
             .add(make_subscription(vec![date_video2, date_video4]));
 
-        let mut result = merger.generate().await;
+        let errors = Arc::new(Mutex::new(ErrorStore::new()));
+        let mut result = merger.generate(errors).await;
 
-        assert_eq!(result.0.next().unwrap().uploaded(), date_video1);
-        assert_eq!(result.0.next().unwrap().uploaded(), date_video2);
-        assert_eq!(result.0.next().unwrap().uploaded(), date_video3);
-        assert_eq!(result.0.next().unwrap().uploaded(), date_video4);
-        assert!(result.0.next().is_none());
-        assert!(result.1.is_none());
+        assert_eq!(result.next().unwrap().uploaded(), date_video1);
+        assert_eq!(result.next().unwrap().uploaded(), date_video2);
+        assert_eq!(result.next().unwrap().uploaded(), date_video3);
+        assert_eq!(result.next().unwrap().uploaded(), date_video4);
+        assert!(result.next().is_none());
     }
 }

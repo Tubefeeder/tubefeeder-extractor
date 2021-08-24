@@ -19,6 +19,9 @@
 
 extern crate tubefeeder_extractor_youtube as tf_yt;
 
+use std::sync::{Arc, Mutex};
+
+use tf_core::ErrorStore;
 use tf_core::{Generator, Pipeline, Video};
 use tf_yt::YTSubscription;
 use tf_yt::YTVideo;
@@ -105,13 +108,15 @@ pub async fn main() {
     let pipeline = Pipeline::<YTSubscription, YTVideo>::new();
     let subscriptions = pipeline.subscription_list();
 
+    let errors = Arc::new(Mutex::new(ErrorStore::new()));
+
     SUBSCRIPTION_IDS
         .iter()
         .map(|id| YTSubscription::new(id))
         .for_each(|sub| subscriptions.lock().unwrap().add(sub));
 
     println!("VIDEOS: ");
-    for video in pipeline.generate().await.0.take(100) {
+    for video in pipeline.generate(errors).await.take(100) {
         let video = video.lock().unwrap();
         let subscription = video.subscription();
         println!(

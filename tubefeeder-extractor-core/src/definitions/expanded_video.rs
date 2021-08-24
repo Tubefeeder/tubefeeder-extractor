@@ -21,10 +21,30 @@ use std::hash::Hash;
 
 use crate::Video;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone)]
 pub struct ExpandedVideo<V> {
     video: V,
     playing: bool,
+}
+
+impl<V> PartialEq for ExpandedVideo<V>
+where
+    V: Video,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.video.eq(&other.video)
+    }
+}
+
+impl<V> Eq for ExpandedVideo<V> where V: Video {}
+
+impl<V> Hash for ExpandedVideo<V>
+where
+    V: Video,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.video.hash(state);
+    }
 }
 
 impl<V: Video> Video for ExpandedVideo<V> {

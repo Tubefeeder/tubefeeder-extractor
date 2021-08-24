@@ -17,7 +17,9 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use tf_core::{Subscription, Video};
+use std::sync::{Arc, Mutex};
+
+use tf_core::{ErrorStore, Subscription, Video};
 
 use async_trait::async_trait;
 
@@ -59,8 +61,9 @@ impl Subscription for TestSubscription {
     type Iterator = std::vec::IntoIter<TestVideo>;
     async fn generate_with_client(
         &self,
-        _: &reqwest::Client,
-    ) -> (Self::Iterator, Option<tf_core::Error>) {
+        _e: Arc<Mutex<ErrorStore>>,
+        _c: &reqwest::Client,
+    ) -> Self::Iterator {
         let video1 = TestVideo {
             title: "This is the test video 1".to_owned(),
             uploaded: chrono::NaiveDate::from_ymd(2021, 8, 17).and_hms(0, 0, 0),
@@ -73,7 +76,7 @@ impl Subscription for TestSubscription {
             subscription: self.clone(),
         };
 
-        (vec![video1, video2].into_iter(), None)
+        vec![video1, video2].into_iter()
     }
 }
 
@@ -105,9 +108,8 @@ mod test {
             name: "TestName".to_owned(),
         };
 
-        let (iterator, error) = subscription.generate().await;
-
-        assert!(error.is_none());
+        let errors = Arc::new(Mutex::new(ErrorStore::new()));
+        let iterator = subscription.generate(errors).await;
 
         let titles: Vec<String> = iterator.map(|v| v.title()).collect();
 

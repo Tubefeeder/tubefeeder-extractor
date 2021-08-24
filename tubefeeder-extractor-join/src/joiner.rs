@@ -17,9 +17,13 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::{future::Future, pin::Pin};
+use std::{
+    future::Future,
+    pin::Pin,
+    sync::{Arc, Mutex},
+};
 
-use tf_core::{Generator, Pipeline};
+use tf_core::{ErrorStore, Generator, Pipeline};
 
 use async_trait::async_trait;
 
@@ -65,48 +69,39 @@ impl Generator for Joiner {
 
     type Iterator = std::vec::IntoIter<AnyVideo>;
 
-    async fn generate(&self) -> (Self::Iterator, Option<tf_core::Error>) {
+    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
         // TODO: Error handling
         // TODO: More efficient
         let mut generators: Vec<
             Pin<
                 Box<
-                    dyn Future<
-                            Output = (
-                                Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>,
-                                Option<tf_core::Error>,
-                            ),
-                        > + std::marker::Send,
+                    dyn Future<Output = Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>>
+                        + std::marker::Send,
                 >,
             >,
         > = vec![];
         #[cfg(feature = "youtube")]
-        generators.push(Box::pin(async {
-            let (iter, err) = self.yt_pipeline.generate().await;
+        let errors_clone = errors.clone();
+        generators.push(Box::pin(async move {
+            let iter = self.yt_pipeline.generate(errors_clone).await;
             let iter_mapped = iter.map(|v| v.into());
-            (
-                Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>,
-                err,
-            )
+            Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>
         }));
         #[cfg(feature = "testPlatform")]
         generators.push(Box::pin(async {
-            let (iter, err) = self.test_pipeline.generate().await;
+            let iter = self.test_pipeline.generate(errors).await;
             let iter_mapped = iter.map(|v| v.into());
-            (
-                Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>,
-                err,
-            )
+            Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>
         }));
 
         let results = futures::future::join_all(generators).await;
         let mut videos: Vec<AnyVideo> = results
             .into_iter()
-            .map(|(i, _e)| i.collect())
+            .map(|i| i.collect())
             .collect::<Vec<Vec<AnyVideo>>>()
             .concat();
         videos.sort_by_cached_key(|v| v.uploaded());
         videos.reverse();
-        (videos.into_iter(), None)
+        videos.into_iter()
     }
 }

@@ -25,7 +25,7 @@
 use std::fmt;
 
 /// The collection of all errors that can occur.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Error {
     /// A error parsing something.
     ParseError(ParseError),
@@ -34,15 +34,12 @@ pub enum Error {
 }
 
 /// A error parsing something.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParseError(pub String);
 
 /// A error accessing the internet.
-#[derive(Debug)]
-pub struct NetworkError {
-    url: Option<String>,
-    error: reqwest::Error,
-}
+#[derive(Debug, Clone)]
+pub struct NetworkError(pub String);
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -61,11 +58,7 @@ impl fmt::Display for ParseError {
 
 impl fmt::Display for NetworkError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(url) = &self.url {
-            write!(f, "Error getting {}: {}", url, self.error)
-        } else {
-            write!(f, "Error accessing web: {}", self.error)
-        }
+        write!(f, "Error getting {}", self.0)
     }
 }
 
@@ -79,13 +72,44 @@ impl From<ParseError> for Error {
     }
 }
 
-impl From<reqwest::Error> for Error {
-    fn from(e: reqwest::Error) -> Self {
-        let network_error = NetworkError {
-            url: e.url().map(|u| u.to_string()),
-            error: e,
-        };
+impl From<NetworkError> for Error {
+    fn from(e: NetworkError) -> Self {
+        Error::NetworkError(e)
+    }
+}
 
-        Error::NetworkError(network_error)
+pub struct ErrorStore {
+    errors: Vec<Error>,
+}
+
+impl ErrorStore {
+    pub fn new() -> Self {
+        ErrorStore { errors: vec![] }
+    }
+
+    pub fn add(&mut self, error: Error) {
+        self.errors.push(error);
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = Error> {
+        self.errors.clone().into_iter()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn add_error(store: &mut ErrorStore) {
+        store.add(NetworkError("Url".to_owned()).into())
+    }
+
+    #[test]
+    fn errorstore() {
+        let mut store = ErrorStore::new();
+        add_error(&mut store);
+        add_error(&mut store);
+
+        assert_eq!(store.iter().count(), 2);
     }
 }

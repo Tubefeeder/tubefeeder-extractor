@@ -18,8 +18,8 @@
  */
 
 use crate::{
-    ExpandedVideo, Expander, Generator, Merger, StoreAccess, Subscription, SubscriptionList, Video,
-    VideoStore,
+    ErrorStore, ExpandedVideo, Expander, Generator, Merger, StoreAccess, Subscription,
+    SubscriptionList, Video, VideoStore,
 };
 
 use std::sync::{Arc, Mutex};
@@ -72,8 +72,8 @@ where
 
     type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
 
-    async fn generate(&self) -> (Self::Iterator, Option<crate::Error>) {
-        self.store_access.generate().await
+    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
+        self.store_access.generate(errors).await
     }
 }
 
