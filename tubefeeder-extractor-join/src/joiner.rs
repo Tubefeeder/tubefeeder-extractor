@@ -29,6 +29,7 @@ use async_trait::async_trait;
 
 use crate::{AnySubscription, AnyVideo};
 
+#[derive(Clone)]
 pub struct Joiner {
     #[cfg(feature = "youtube")]
     yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,

@@ -62,9 +62,15 @@ impl YTSubscription {
         self.id.clone()
     }
 
-    /// Get the name id of the [`YTSubscription`].
+    /// Get the name of the [`YTSubscription`].
     pub fn name(&self) -> Option<String> {
         self.name.clone()
+    }
+}
+
+impl std::fmt::Display for YTSubscription {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name().unwrap_or(self.id()))
     }
 }
 
@@ -133,12 +139,14 @@ mod test {
             title: "VIDEO 1 !! Click".to_string(),
             subscription: subscription.clone(),
             uploaded: chrono::NaiveDate::from_ymd(2021, 7, 19).and_hms(16, 18, 6),
+            thumbnail_url: "https://i4.ytimg.com/vi/videoid1/hqdefault.jpg".to_owned(),
         };
         let video2 = YTVideo {
             url: "https://www.youtube.com/watch?v=videoid2".to_string(),
             title: "VIDEO 2 !! Click".to_string(),
             subscription,
             uploaded: chrono::NaiveDate::from_ymd(2021, 7, 29).and_hms(16, 18, 6),
+            thumbnail_url: "https://i4.ytimg.com/vi/videoid2/hqdefault.jpg".to_owned(),
         };
 
         vec![video1, video2]

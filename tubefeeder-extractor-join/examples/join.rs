@@ -21,7 +21,7 @@ extern crate tubefeeder_extractor_join as tf_join;
 
 use std::sync::{Arc, Mutex};
 
-use tf_core::{ErrorStore, Generator, Video};
+use tf_core::{ErrorStore, Generator};
 use tf_join::{AnySubscription, AnyVideo, Joiner};
 
 #[cfg(feature = "testPlatform")]
@@ -55,23 +55,13 @@ pub async fn main() {
 
     println!("VIDEOS: ");
     for video in join.generate(errors).await.take(100) {
-        match video {
+        let source = match &video {
             #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(v) => {
-                let yt_v = v.lock().unwrap();
-                let sub = yt_v.subscription();
-                println!(
-                    "YouT: {} - {}",
-                    sub.name().unwrap_or(sub.id()),
-                    yt_v.title()
-                );
-            }
+            AnyVideo::Youtube(_v) => "YouT",
             #[cfg(feature = "testPlatform")]
-            AnyVideo::Test(v) => {
-                let test_v = v.lock().unwrap();
-                let sub = test_v.subscription();
-                println!("Test: {} - {}", sub.name(), test_v.title());
-            }
-        }
+            AnyVideo::Test(_v) => "Test",
+        };
+
+        println!("{}: {} - {}", source, video.title(), video.subscription())
     }
 }

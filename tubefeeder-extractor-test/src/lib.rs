@@ -55,6 +55,12 @@ impl Video for TestVideo {
     }
 }
 
+impl std::fmt::Display for TestSubscription {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
 #[async_trait]
 impl Subscription for TestSubscription {
     type Video = TestVideo;

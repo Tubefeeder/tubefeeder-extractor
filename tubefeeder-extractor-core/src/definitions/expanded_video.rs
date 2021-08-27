@@ -17,7 +17,9 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::hash::Hash;
+use std::{hash::Hash, path::Path};
+
+use async_trait::async_trait;
 
 use crate::Video;
 
@@ -47,6 +49,7 @@ where
     }
 }
 
+#[async_trait]
 impl<V: Video> Video for ExpandedVideo<V> {
     type Subscription = V::Subscription;
 
@@ -64,6 +67,18 @@ impl<V: Video> Video for ExpandedVideo<V> {
 
     fn subscription(&self) -> Self::Subscription {
         self.video.subscription()
+    }
+
+    async fn thumbnail_with_client<P: AsRef<Path> + Send>(
+        &self,
+        client: &reqwest::Client,
+        filename: P,
+        width: i32,
+        height: i32,
+    ) {
+        self.video
+            .thumbnail_with_client(client, filename, width, height)
+            .await
     }
 }
 

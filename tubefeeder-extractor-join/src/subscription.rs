@@ -25,6 +25,17 @@ pub enum AnySubscription {
     Test(tf_test::TestSubscription),
 }
 
+impl std::fmt::Display for AnySubscription {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnySubscription::Youtube(s) => write!(f, "{}", s),
+            #[cfg(feature = "testPlatform")]
+            AnySubscription::Test(s) => write!(f, "{}", s),
+        }
+    }
+}
+
 #[cfg(feature = "youtube")]
 impl From<tf_yt::YTSubscription> for AnySubscription {
     fn from(s: tf_yt::YTSubscription) -> Self {

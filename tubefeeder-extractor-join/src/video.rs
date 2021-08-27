@@ -17,7 +17,10 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::{Arc, Mutex};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+};
 
 use tf_core::{ExpandedVideo, Video};
 
@@ -66,6 +69,36 @@ impl AnyVideo {
             #[cfg(feature = "testPlatform")]
             AnyVideo::Test(test) => test.lock().unwrap().subscription().into(),
         }
+    }
+
+    pub async fn thumbnail_with_client<P: AsRef<Path> + Send>(
+        &self,
+        client: &reqwest::Client,
+        filename: P,
+        width: i32,
+        height: i32,
+    ) {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(yt) => {
+                yt.lock()
+                    .unwrap()
+                    .thumbnail_with_client(client, filename, width, height)
+                    .await
+            }
+            #[cfg(feature = "testPlatform")]
+            AnyVideo::Test(test) => {
+                test.lock()
+                    .unwrap()
+                    .thumbnail_with_client(client, filename, width, height)
+                    .await
+            }
+        }
+    }
+
+    pub async fn thumbnail<P: AsRef<Path> + Send>(&self, filename: P, width: i32, height: i32) {
+        self.thumbnail_with_client(&reqwest::Client::new(), filename, width, height)
+            .await
     }
 }
 

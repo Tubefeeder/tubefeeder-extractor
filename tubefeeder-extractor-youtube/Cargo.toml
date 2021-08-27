@@ -15,6 +15,8 @@ quick-xml = { version = "^0.22", features = [ "serialize" ] }
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
 serde = { version = "^1.0", features = [ "derive" ] }
 log = "^0.4"
+gdk-pixbuf = "^0.14"
+glib = "^0.14"
 
 [dev-dependencies]
 mockall = "^0.10"
