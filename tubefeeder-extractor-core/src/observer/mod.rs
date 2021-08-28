@@ -47,16 +47,17 @@ pub trait Observer<T> {
 pub trait Observable<T> {
     /// Attach a [`Observer<T>`] to the [`Observable`].
     /// Should be implemented using [`ObserverList::attach`].
-    fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T>>>>);
+    fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>);
     /// Detach a [`Observer<T>`] to the [`Observable`].
     /// Should be implemented using [`ObserverList::detach`].
-    fn detach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T>>>>);
+    fn detach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>);
 }
 
 /// A list of [`Observer<T>`] using the message `T`.
+#[derive(Clone)]
 pub struct ObserverList<T> {
     /// The [`Observer<T>`] list.
-    observers: Vec<Weak<Mutex<Box<dyn Observer<T>>>>>,
+    observers: Vec<Weak<Mutex<Box<dyn Observer<T> + Send>>>>,
 }
 
 impl<T> ObserverList<T> {
@@ -66,13 +67,13 @@ impl<T> ObserverList<T> {
     }
 
     /// Attach a [`Observer<T>`] to the [`ObserverList`].
-    pub fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T>>>>) {
+    pub fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
         self.observers.push(observer);
     }
 
     /// Detach a [`Observer<T>`] to the [`ObserverList`].
     /// This will also detach all dropped [`Observer`]s.
-    pub fn detach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T>>>>) {
+    pub fn detach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
         self.observers
             .retain(|o| o.upgrade().is_some() && !o.ptr_eq(&observer));
     }
@@ -109,7 +110,9 @@ mod test {
 
         let observer1 = MockObserver::new();
 
-        let observer1_ref = Arc::new(Mutex::new(Box::new(observer1) as Box<dyn Observer<u64>>));
+        let observer1_ref = Arc::new(Mutex::new(
+            Box::new(observer1) as Box<dyn Observer<u64> + Send>
+        ));
 
         observer_list.attach(Arc::downgrade(&observer1_ref));
 
@@ -139,7 +142,9 @@ mod test {
             .times(1)
             .returning(|_| ());
 
-        let observer1_ref = Arc::new(Mutex::new(Box::new(observer1) as Box<dyn Observer<u64>>));
+        let observer1_ref = Arc::new(Mutex::new(
+            Box::new(observer1) as Box<dyn Observer<u64> + Send>
+        ));
 
         observer_list.attach(Arc::downgrade(&observer1_ref));
         observer_list.notify(10);
@@ -168,8 +173,12 @@ mod test {
             .times(1)
             .returning(|_| ());
 
-        let observer1_ref = Arc::new(Mutex::new(Box::new(observer1) as Box<dyn Observer<u64>>));
-        let observer2_ref = Arc::new(Mutex::new(Box::new(observer2) as Box<dyn Observer<u64>>));
+        let observer1_ref = Arc::new(Mutex::new(
+            Box::new(observer1) as Box<dyn Observer<u64> + Send>
+        ));
+        let observer2_ref = Arc::new(Mutex::new(
+            Box::new(observer2) as Box<dyn Observer<u64> + Send>
+        ));
 
         observer_list.attach(Arc::downgrade(&observer1_ref));
         observer_list.notify(10);
@@ -184,7 +193,9 @@ mod test {
 
         let observer1 = MockObserver::new();
 
-        let observer1_ref = Arc::new(Mutex::new(Box::new(observer1) as Box<dyn Observer<u64>>));
+        let observer1_ref = Arc::new(Mutex::new(
+            Box::new(observer1) as Box<dyn Observer<u64> + Send>
+        ));
 
         observer_list.attach(Arc::downgrade(&observer1_ref));
 

@@ -22,7 +22,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use tf_core::{ExpandedVideo, Video};
+use tf_core::{ExpandedVideo, Observable, Video};
 
 use crate::AnySubscription;
 
@@ -99,6 +99,59 @@ impl AnyVideo {
     pub async fn thumbnail<P: AsRef<Path> + Send>(&self, filename: P, width: i32, height: i32) {
         self.thumbnail_with_client(&reqwest::Client::new(), filename, width, height)
             .await
+    }
+
+    pub fn play(&self) {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(yt) => yt.lock().unwrap().play(),
+            #[cfg(feature = "testPlatform")]
+            AnyVideo::Test(test) => test.lock().unwrap().play(),
+        }
+    }
+
+    pub fn stop(&self) {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(yt) => yt.lock().unwrap().stop(),
+            #[cfg(feature = "testPlatform")]
+            AnyVideo::Test(test) => test.lock().unwrap().stop(),
+        }
+    }
+
+    pub fn playing(&self) -> bool {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(yt) => yt.lock().unwrap().playing(),
+            #[cfg(feature = "testPlatform")]
+            AnyVideo::Test(test) => test.lock().unwrap().playing(),
+        }
+    }
+}
+
+impl Observable<tf_core::VideoEvent> for AnyVideo {
+    fn attach(
+        &mut self,
+        observer: std::sync::Weak<Mutex<Box<dyn tf_core::Observer<tf_core::VideoEvent> + Send>>>,
+    ) {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(yt) => yt.lock().unwrap().attach(observer),
+            #[cfg(feature = "testPlatform")]
+            AnyVideo::Test(test) => test.lock().unwrap().attach(observer),
+        }
+    }
+
+    fn detach(
+        &mut self,
+        observer: std::sync::Weak<Mutex<Box<dyn tf_core::Observer<tf_core::VideoEvent> + Send>>>,
+    ) {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(yt) => yt.lock().unwrap().detach(observer),
+            #[cfg(feature = "testPlatform")]
+            AnyVideo::Test(test) => test.lock().unwrap().detach(observer),
+        }
     }
 }
 

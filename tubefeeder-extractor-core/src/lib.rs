@@ -26,6 +26,7 @@ mod observer;
 mod pipeline;
 
 pub use definitions::expanded_video::ExpandedVideo;
+pub use definitions::expanded_video::VideoEvent;
 pub use definitions::generator::Generator;
 pub use definitions::subscription::Subscription;
 pub use definitions::video::Video;

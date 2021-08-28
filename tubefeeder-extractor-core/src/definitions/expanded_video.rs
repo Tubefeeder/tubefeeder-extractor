@@ -21,10 +21,11 @@ use std::{hash::Hash, path::Path};
 
 use async_trait::async_trait;
 
-use crate::Video;
+use crate::{Observable, ObserverList, Video};
 
 #[derive(Clone)]
 pub struct ExpandedVideo<V> {
+    observers: ObserverList<VideoEvent>,
     video: V,
     playing: bool,
 }
@@ -90,6 +91,7 @@ where
         ExpandedVideo {
             video,
             playing: false,
+            observers: ObserverList::new(),
         }
     }
 }
@@ -97,9 +99,37 @@ where
 impl<V: Video> ExpandedVideo<V> {
     pub fn play(&mut self) {
         self.playing = true;
+        self.observers.notify(VideoEvent::Play);
     }
 
     pub fn stop(&mut self) {
         self.playing = false;
+        self.observers.notify(VideoEvent::Stop);
+    }
+
+    pub fn playing(&self) -> bool {
+        self.playing
+    }
+}
+
+#[derive(Clone)]
+pub enum VideoEvent {
+    Play,
+    Stop,
+}
+
+impl<V: Video> Observable<VideoEvent> for ExpandedVideo<V> {
+    fn attach(
+        &mut self,
+        observer: std::sync::Weak<std::sync::Mutex<Box<dyn crate::Observer<VideoEvent> + Send>>>,
+    ) {
+        self.observers.attach(observer)
+    }
+
+    fn detach(
+        &mut self,
+        observer: std::sync::Weak<std::sync::Mutex<Box<dyn crate::Observer<VideoEvent> + Send>>>,
+    ) {
+        self.observers.detach(observer)
     }
 }
