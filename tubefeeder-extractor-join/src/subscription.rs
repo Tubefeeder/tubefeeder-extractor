@@ -17,12 +17,25 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::convert::{TryFrom, TryInto};
+
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum AnySubscription {
     #[cfg(feature = "youtube")]
     Youtube(tf_yt::YTSubscription),
     #[cfg(feature = "testPlatform")]
     Test(tf_test::TestSubscription),
+}
+
+impl AnySubscription {
+    pub fn platform(&self) -> Platform {
+        match &self {
+            #[cfg(feature = "youtube")]
+            AnySubscription::Youtube(_) => Platform::Youtube,
+            #[cfg(feature = "testPlatform")]
+            AnySubscription::Test(_) => Platform::Test,
+        }
+    }
 }
 
 impl std::fmt::Display for AnySubscription {
@@ -32,6 +45,34 @@ impl std::fmt::Display for AnySubscription {
             AnySubscription::Youtube(s) => write!(f, "{}", s),
             #[cfg(feature = "testPlatform")]
             AnySubscription::Test(s) => write!(f, "{}", s),
+        }
+    }
+}
+
+impl TryFrom<&[&str]> for AnySubscription {
+    // TODO: Error handling
+    type Error = ();
+
+    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
+        let platform = value.get(0).map(|&p| p.try_into());
+        match platform {
+            #[cfg(feature = "youtube")]
+            Some(Ok(Platform::Youtube)) => {
+                let id = value.get(1);
+                match id {
+                    Some(id) => Ok(tf_yt::YTSubscription::new(id).into()),
+                    _ => Err(()),
+                }
+            }
+            #[cfg(feature = "testPlatform")]
+            Some(Ok(Platform::Test)) => {
+                let id = value.get(1);
+                match id {
+                    Some(id) => Ok(tf_test::TestSubscription::new(id).into()),
+                    _ => Err(()),
+                }
+            }
+            _ => Err(()),
         }
     }
 }
@@ -47,5 +88,72 @@ impl From<tf_yt::YTSubscription> for AnySubscription {
 impl From<tf_test::TestSubscription> for AnySubscription {
     fn from(s: tf_test::TestSubscription) -> Self {
         AnySubscription::Test(s)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Platform {
+    #[cfg(feature = "youtube")]
+    Youtube,
+    #[cfg(feature = "testPlatform")]
+    Test,
+}
+
+impl TryFrom<&str> for Platform {
+    // TODO: Error handling
+    type Error = ();
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            #[cfg(feature = "youtube")]
+            "youtube" => Ok(Platform::Youtube),
+            #[cfg(feature = "testPlatform")]
+            "test" => Ok(Platform::Test),
+            _ => Err(()),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[cfg(feature = "youtube")]
+    fn anysubscription_conversion_youtube() {
+        let row = vec!["youtube", "abcdef"];
+        let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
+        assert!(subscription_res.is_ok());
+
+        let subscription = subscription_res.unwrap();
+        assert_eq!(subscription.platform(), Platform::Youtube);
+        assert_eq!(subscription.to_string(), "abcdef");
+    }
+
+    #[test]
+    #[cfg(feature = "testPlatform")]
+    fn anysubscription_conversion_test() {
+        let row = vec!["test", "abcdef"];
+        let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
+        assert!(subscription_res.is_ok());
+
+        let subscription = subscription_res.unwrap();
+        assert_eq!(subscription.platform(), Platform::Test);
+        assert_eq!(subscription.to_string(), "abcdef");
+    }
+
+    #[test]
+    fn anysubscription_conversion_fail_no_platform() {
+        let row = vec!["thiswillfail", "abcdef"];
+        let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
+        assert!(subscription_res.is_err());
+    }
+
+    #[test]
+    #[cfg(feature = "youtube")]
+    fn anysubscription_conversion_fail_to_short() {
+        let row = vec!["youtube"];
+        let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
+        assert!(subscription_res.is_err());
     }
 }

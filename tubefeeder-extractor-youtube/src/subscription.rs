@@ -70,7 +70,7 @@ impl YTSubscription {
 
 impl std::fmt::Display for YTSubscription {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name().unwrap_or(self.id()))
+        write!(f, "{}", self.name().unwrap_or_else(|| self.id()))
     }
 }
 
@@ -85,7 +85,7 @@ impl tf_core::Subscription for YTSubscription {
     ) -> Self::Iterator {
         log::debug!(
             "Generating YT videos from channel {}",
-            self.name().unwrap_or(self.id())
+            self.name().unwrap_or_else(|| self.id())
         );
         let result = client
             .get(format!("{}{}", feed_url(), self.id()))
@@ -120,7 +120,7 @@ impl tf_core::Subscription for YTSubscription {
 
         log::debug!(
             "Finished Generating YT videos from channel {}",
-            self.name().unwrap_or(self.id())
+            self.name().unwrap_or_else(|| self.id())
         );
 
         Vec::<YTVideo>::from(parsed.unwrap()).into_iter()

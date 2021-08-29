@@ -27,7 +27,7 @@ use tf_core::{ErrorStore, Generator, Pipeline};
 
 use async_trait::async_trait;
 
-use crate::{AnySubscription, AnyVideo};
+use crate::{AnySubscription, AnySubscriptionList, AnyVideo};
 
 #[derive(Clone)]
 pub struct Joiner {
@@ -45,6 +45,16 @@ impl Joiner {
             #[cfg(feature = "testPlatform")]
             test_pipeline: Pipeline::new(),
         }
+    }
+
+    pub fn subscription_list(&self) -> AnySubscriptionList {
+        let mut subscriptions = AnySubscriptionList::default();
+        #[cfg(feature = "youtube")]
+        subscriptions.yt_subscriptions(self.yt_pipeline.subscription_list());
+        #[cfg(feature = "testPlatform")]
+        subscriptions.test_subscriptions(self.test_pipeline.subscription_list());
+
+        subscriptions
     }
 
     pub fn subscribe(&self, subscription: AnySubscription) {
@@ -104,5 +114,11 @@ impl Generator for Joiner {
         videos.sort_by_cached_key(|v| v.uploaded());
         videos.reverse();
         videos.into_iter()
+    }
+}
+
+impl Default for Joiner {
+    fn default() -> Self {
+        Joiner::new()
     }
 }

@@ -7,8 +7,8 @@ edition = "2018"
 
 [dependencies]
 tf_core = { package = "tubefeeder-extractor-core", path = "../tubefeeder-extractor-core" }
-tf_yt = { package = "tubefeeder-extractor-youtube", path = "../tubefeeder-extractor-youtube" }
-tf_test = { package = "tubefeeder-extractor-test", path = "../tubefeeder-extractor-test" }
+tf_yt = { package = "tubefeeder-extractor-youtube", path = "../tubefeeder-extractor-youtube", optional = true}
+tf_test = { package = "tubefeeder-extractor-test", path = "../tubefeeder-extractor-test" , optional = true}
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
@@ -24,5 +24,5 @@ env_logger =  "^0.9"
 
 [features]
 default = ["youtube"]
-youtube = []
-testPlatform = []
+youtube = ["tf_yt"]
+testPlatform = ["tf_test"]

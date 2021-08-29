@@ -41,17 +41,19 @@ pub async fn main() {
     let join = Joiner::new();
     let errors = Arc::new(Mutex::new(ErrorStore::new()));
 
+    let subscription_list = join.subscription_list();
+
     #[cfg(feature = "youtube")]
     YT_SUBSCRIPTION_IDS
         .iter()
         .map(|id| YTSubscription::new(id).into())
-        .for_each(|sub: AnySubscription| join.subscribe(sub.into()));
+        .for_each(|sub: AnySubscription| subscription_list.add(sub));
 
     #[cfg(feature = "testPlatform")]
     TEST_SUBSCRIPTION_NAMES
         .iter()
         .map(|name| TestSubscription::new(name).into())
-        .for_each(|sub: AnySubscription| join.subscribe(sub.into()));
+        .for_each(|sub: AnySubscription| subscription_list.add(sub));
 
     println!("VIDEOS: ");
     for video in join.generate(errors).await.take(100) {

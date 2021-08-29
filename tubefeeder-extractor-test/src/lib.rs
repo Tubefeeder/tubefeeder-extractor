@@ -47,7 +47,7 @@ impl Video for TestVideo {
     }
 
     fn uploaded(&self) -> chrono::NaiveDateTime {
-        self.uploaded.clone()
+        self.uploaded
     }
 
     fn subscription(&self) -> TestSubscription {

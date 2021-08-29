@@ -96,6 +96,12 @@ impl ErrorStore {
     }
 }
 
+impl Default for ErrorStore {
+    fn default() -> Self {
+        ErrorStore::new()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

@@ -19,8 +19,11 @@
 
 mod joiner;
 mod subscription;
+mod subscription_list;
 mod video;
 
 pub use crate::joiner::Joiner;
 pub use crate::subscription::AnySubscription;
+pub use crate::subscription::Platform;
+pub use crate::subscription_list::AnySubscriptionList;
 pub use crate::video::AnyVideo;
