@@ -26,4 +26,5 @@ pub use crate::joiner::Joiner;
 pub use crate::subscription::AnySubscription;
 pub use crate::subscription::Platform;
 pub use crate::subscription_list::AnySubscriptionList;
+pub use crate::subscription_list::SubscriptionEvent;
 pub use crate::video::AnyVideo;

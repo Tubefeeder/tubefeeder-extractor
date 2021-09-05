@@ -34,7 +34,8 @@ fn feed_url() -> String {
 }
 
 /// A [`YTSubscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+// TODO: Self-implement PartialOrd, Ord
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct YTSubscription {
     /// The channel id.
     id: String,

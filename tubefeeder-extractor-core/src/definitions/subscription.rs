@@ -29,7 +29,16 @@ use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 /// A [`Subscription`] to a channel. The [`Subscription`][Subscription] must be able to generate
 /// [`Video`][crate::Video]s asyncronously.
 #[async_trait]
-pub trait Subscription: Clone + std::marker::Send + std::marker::Sync + std::fmt::Display {
+pub trait Subscription:
+    Clone
+    + std::marker::Send
+    + std::marker::Sync
+    + std::fmt::Display
+    + PartialEq
+    + Eq
+    + PartialOrd
+    + Ord
+{
     type Video: crate::Video;
     type Iterator: Iterator<Item = Self::Video>;
     async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {

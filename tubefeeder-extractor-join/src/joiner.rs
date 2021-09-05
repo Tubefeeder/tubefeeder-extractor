@@ -31,6 +31,7 @@ use crate::{AnySubscription, AnySubscriptionList, AnyVideo};
 
 #[derive(Clone)]
 pub struct Joiner {
+    subscription_list: AnySubscriptionList,
     #[cfg(feature = "youtube")]
     yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,
     #[cfg(feature = "testPlatform")]
@@ -39,22 +40,28 @@ pub struct Joiner {
 
 impl Joiner {
     pub fn new() -> Self {
+        #[cfg(feature = "youtube")]
+        let yt_pipeline = Pipeline::new();
+        #[cfg(feature = "testPlatform")]
+        let test_pipeline = Pipeline::new();
+
+        let mut subscriptions = AnySubscriptionList::default();
+        #[cfg(feature = "youtube")]
+        subscriptions.yt_subscriptions(yt_pipeline.subscription_list());
+        #[cfg(feature = "testPlatform")]
+        subscriptions.test_subscriptions(test_pipeline.subscription_list());
+
         Joiner {
+            subscription_list: subscriptions,
             #[cfg(feature = "youtube")]
-            yt_pipeline: Pipeline::new(),
+            yt_pipeline,
             #[cfg(feature = "testPlatform")]
-            test_pipeline: Pipeline::new(),
+            test_pipeline,
         }
     }
 
     pub fn subscription_list(&self) -> AnySubscriptionList {
-        let mut subscriptions = AnySubscriptionList::default();
-        #[cfg(feature = "youtube")]
-        subscriptions.yt_subscriptions(self.yt_pipeline.subscription_list());
-        #[cfg(feature = "testPlatform")]
-        subscriptions.test_subscriptions(self.test_pipeline.subscription_list());
-
-        subscriptions
+        self.subscription_list.clone()
     }
 
     pub fn subscribe(&self, subscription: AnySubscription) {

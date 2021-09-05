@@ -37,6 +37,11 @@ where
     pub fn add(&mut self, subscription: S) {
         self.subscriptions.push(subscription);
     }
+
+    pub fn remove(&mut self, subscription: S) {
+        self.subscriptions.retain(|s| s != &subscription);
+    }
+
     pub fn subscriptions(&self) -> Vec<S> {
         self.subscriptions.clone()
     }

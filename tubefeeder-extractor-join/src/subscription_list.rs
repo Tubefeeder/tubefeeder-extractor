@@ -53,6 +53,48 @@ impl AnySubscriptionList {
         }
         self.observers.notify(SubscriptionEvent::Add(subscription))
     }
+
+    pub fn remove(&self, subscription: AnySubscription) {
+        log::debug!("Removing subscription {}", subscription);
+        match subscription.clone() {
+            #[cfg(feature = "youtube")]
+            AnySubscription::Youtube(sub) => self.yt_subscriptions.lock().unwrap().remove(sub),
+            #[cfg(feature = "testPlatform")]
+            AnySubscription::Test(sub) => self.test_subscriptions.lock().unwrap().remove(sub),
+        }
+        self.observers
+            .notify(SubscriptionEvent::Remove(subscription))
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = AnySubscription> {
+        let mut vec = vec![];
+        #[cfg(feature = "youtube")]
+        vec.append(
+            &mut self
+                .yt_subscriptions
+                .lock()
+                .unwrap()
+                .subscriptions()
+                .into_iter()
+                .map(|s| s.into())
+                .collect::<Vec<AnySubscription>>()
+                .clone(),
+        );
+        #[cfg(feature = "testPlatform")]
+        vec.append(
+            &mut self
+                .test_subscriptions
+                .lock()
+                .unwrap()
+                .subscriptions()
+                .into_iter()
+                .map(|s| s.into())
+                .collect::<Vec<AnySubscription>>()
+                .clone(),
+        );
+
+        vec.into_iter()
+    }
 }
 
 impl Default for AnySubscriptionList {
@@ -61,10 +103,10 @@ impl Default for AnySubscriptionList {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum SubscriptionEvent {
     Add(AnySubscription),
-    _Remove(AnySubscription),
+    Remove(AnySubscription),
 }
 
 impl Observable<SubscriptionEvent> for AnySubscriptionList {

@@ -222,4 +222,38 @@ mod test {
             "The observable does not have the correct amount of observers"
         );
     }
+
+    #[test]
+    fn observer_list_test_clone() {
+        let mut observer_list = ObserverList::new();
+
+        let mut observer1 = MockObserver::new();
+        observer1
+            .expect_notify()
+            .with(predicate::eq(10u64))
+            .times(1)
+            .returning(|_| ());
+
+        let observer1_ref = Arc::new(Mutex::new(
+            Box::new(observer1) as Box<dyn Observer<u64> + Send>
+        ));
+
+        observer_list.attach(Arc::downgrade(&observer1_ref));
+
+        assert_eq!(
+            1,
+            observer_list.observers.len(),
+            "The observable does not have the correct amount of observers"
+        );
+
+        let observer_list2 = observer_list.clone();
+
+        assert_eq!(
+            1,
+            observer_list2.observers.len(),
+            "The observable does not have the correct amount of observers"
+        );
+
+        observer_list2.notify(10);
+    }
 }

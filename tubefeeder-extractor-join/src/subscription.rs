@@ -19,7 +19,7 @@
 
 use std::convert::{TryFrom, TryInto};
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Ord, PartialOrd)]
 pub enum AnySubscription {
     #[cfg(feature = "youtube")]
     Youtube(tf_yt::YTSubscription),
@@ -77,6 +77,20 @@ impl TryFrom<&[&str]> for AnySubscription {
     }
 }
 
+impl From<AnySubscription> for Vec<String> {
+    fn from(sub: AnySubscription) -> Self {
+        let mut result = vec![sub.platform().into()];
+        match sub {
+            #[cfg(feature = "youtube")]
+            AnySubscription::Youtube(s) => result.push(s.id()),
+            #[cfg(feature = "testPlatform")]
+            AnySubscription::Test(s) => result.push(s.name()),
+        }
+
+        return result;
+    }
+}
+
 #[cfg(feature = "youtube")]
 impl From<tf_yt::YTSubscription> for AnySubscription {
     fn from(s: tf_yt::YTSubscription) -> Self {
@@ -114,9 +128,21 @@ impl TryFrom<&str> for Platform {
     }
 }
 
+impl From<Platform> for String {
+    fn from(p: Platform) -> Self {
+        match p {
+            #[cfg(feature = "youtube")]
+            Platform::Youtube => "youtube".to_owned(),
+            #[cfg(feature = "testPlatform")]
+            Platform::Test => "testPlatform".to_owned(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
+    use tf_yt::YTSubscription;
 
     #[test]
     #[cfg(feature = "youtube")]
@@ -131,6 +157,15 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "youtube")]
+    fn anysubscription_conversion_youtube_back() {
+        let row = vec!["youtube", "abcdef"];
+        let subscription: AnySubscription = YTSubscription::new("abcdef").into();
+
+        assert_eq!(Vec::<String>::from(subscription), row);
+    }
+
+    #[test]
     #[cfg(feature = "testPlatform")]
     fn anysubscription_conversion_test() {
         let row = vec!["test", "abcdef"];
@@ -140,6 +175,15 @@ mod test {
         let subscription = subscription_res.unwrap();
         assert_eq!(subscription.platform(), Platform::Test);
         assert_eq!(subscription.to_string(), "abcdef");
+    }
+
+    #[test]
+    #[cfg(feature = "testPlatform")]
+    fn anysubscription_conversion_test_back() {
+        let row = vec!["test", "abcdef"];
+        let subscription: AnySubscription = TestSubscription::new("abcdef").into();
+
+        assert_eq!(Vec::<String>::from(subscription), row);
     }
 
     #[test]
