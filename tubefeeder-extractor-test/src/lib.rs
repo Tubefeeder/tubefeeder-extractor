@@ -30,7 +30,7 @@ pub struct TestVideo {
     subscription: TestSubscription,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub struct TestSubscription {
     name: String,
 }

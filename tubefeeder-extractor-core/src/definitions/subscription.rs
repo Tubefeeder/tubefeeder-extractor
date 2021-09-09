@@ -81,6 +81,26 @@ mock! {
         }
     }
 
+    impl std::cmp::PartialEq for Subscription {
+        fn eq(&self, _other: &MockSubscription) -> bool {
+            false
+        }
+    }
+
+    impl Eq for Subscription {}
+
+    impl std::cmp::PartialOrd for Subscription {
+        fn partial_cmp(&self, _other: &MockSubscription) -> Option<std::cmp::Ordering> {
+            None
+        }
+    }
+
+    impl std::cmp::Ord for Subscription {
+        fn cmp(&self, _other: &MockSubscription) -> std::cmp::Ordering {
+            Ordering::Eq
+        }
+    }
+
     #[async_trait]
     impl Subscription for Subscription {
         type Video = MockVideo;

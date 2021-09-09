@@ -68,7 +68,14 @@ impl<T> ObserverList<T> {
 
     /// Attach a [`Observer<T>`] to the [`ObserverList`].
     pub fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
-        self.observers.push(observer);
+        if self
+            .observers
+            .iter()
+            .find(|o| o.ptr_eq(&observer))
+            .is_none()
+        {
+            self.observers.push(observer);
+        }
     }
 
     /// Detach a [`Observer<T>`] to the [`ObserverList`].

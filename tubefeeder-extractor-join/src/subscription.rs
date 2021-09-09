@@ -134,7 +134,7 @@ impl From<Platform> for String {
             #[cfg(feature = "youtube")]
             Platform::Youtube => "youtube".to_owned(),
             #[cfg(feature = "testPlatform")]
-            Platform::Test => "testPlatform".to_owned(),
+            Platform::Test => "test".to_owned(),
         }
     }
 }
@@ -142,6 +142,9 @@ impl From<Platform> for String {
 #[cfg(test)]
 mod test {
     use super::*;
+    #[cfg(feature = "testPlatform")]
+    use tf_test::TestSubscription;
+    #[cfg(feature = "youtube")]
     use tf_yt::YTSubscription;
 
     #[test]
