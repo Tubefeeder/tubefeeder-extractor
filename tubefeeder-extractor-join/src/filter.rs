@@ -159,15 +159,11 @@ fn map_empty_to_none<S: AsRef<str>>(st: S) -> Option<String> {
 mod test {
     use super::*;
     use std::convert::TryInto;
-    #[cfg(feature = "testPlatform")]
     use std::sync::{Arc, Mutex};
-    #[cfg(feature = "testPlatform")]
     use tf_core::ExpandedVideo;
-    #[cfg(feature = "testPlatform")]
     use tf_test::{TestSubscription, TestVideo};
 
     #[test]
-    #[cfg(feature = "testPlatform")]
     fn filter_match_title_subscription() {
         let sub = TestSubscription::new("Subscription");
         let video = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
@@ -185,7 +181,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "testPlatform")]
     fn filter_match_title() {
         let sub = TestSubscription::new("Subscription");
         let video = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
@@ -199,7 +194,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "testPlatform")]
     fn filter_match_all() {
         let sub = TestSubscription::new("Subscription");
         let video = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
@@ -217,7 +211,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "testPlatform")]
     fn filter_no_match_title() {
         let sub = TestSubscription::new("Subscription");
         let video = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
@@ -235,7 +228,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "testPlatform")]
     fn filter_no_match_subscription() {
         let sub = TestSubscription::new("Subscription");
         let video = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
@@ -253,7 +245,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "testPlatform")]
     #[cfg(feature = "youtube")]
     fn filter_no_match_platform() {
         let sub = TestSubscription::new("Subscription");
@@ -272,21 +263,16 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "youtube")]
     fn filter_conversion_all() {
         let filter = AnyVideoFilter::new(
-            Some(Platform::Youtube),
+            Some(Platform::Test),
             Some(Regex::new("itl").unwrap()),
             Some(Regex::new("ubscr").unwrap()),
         );
 
         assert_eq!(
             Vec::<String>::from(filter),
-            vec![
-                "youtube".to_string(),
-                "itl".to_string(),
-                "ubscr".to_string()
-            ]
+            vec!["test".to_string(), "itl".to_string(), "ubscr".to_string()]
         );
     }
 
@@ -301,17 +287,16 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "youtube")]
     fn filter_conversion_all_back() {
         let filter = AnyVideoFilter::new(
-            Some(Platform::Youtube),
+            Some(Platform::Test),
             Some(Regex::new("itl").unwrap()),
             Some(Regex::new("ubscr").unwrap()),
         );
 
         assert_eq!(
             Ok(filter),
-            vec!["youtube", "itl", "ubscr"].as_slice().try_into()
+            vec!["test", "itl", "ubscr"].as_slice().try_into()
         );
     }
 

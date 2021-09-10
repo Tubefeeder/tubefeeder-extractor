@@ -30,7 +30,7 @@ use crate::{AnySubscription, Platform};
 pub enum AnyVideo {
     #[cfg(feature = "youtube")]
     Youtube(Arc<Mutex<ExpandedVideo<tf_yt::YTVideo>>>),
-    #[cfg(feature = "testPlatform")]
+    #[cfg(test)]
     Test(Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>),
 }
 
@@ -39,7 +39,7 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().url(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().url(),
         }
     }
@@ -48,7 +48,7 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().title(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().title(),
         }
     }
@@ -57,7 +57,7 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().uploaded(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().uploaded(),
         }
     }
@@ -66,7 +66,7 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().subscription().into(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().subscription().into(),
         }
     }
@@ -86,7 +86,7 @@ impl AnyVideo {
                     .thumbnail_with_client(client, filename, width, height)
                     .await
             }
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => {
                 test.lock()
                     .unwrap()
@@ -105,7 +105,7 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().play(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().play(),
         }
     }
@@ -114,7 +114,7 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().stop(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().stop(),
         }
     }
@@ -123,7 +123,7 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().playing(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().playing(),
         }
     }
@@ -132,7 +132,7 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(_yt) => Platform::Youtube,
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(_test) => Platform::Test,
         }
     }
@@ -146,7 +146,7 @@ impl Observable<tf_core::VideoEvent> for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().attach(observer),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().attach(observer),
         }
     }
@@ -158,7 +158,7 @@ impl Observable<tf_core::VideoEvent> for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().detach(observer),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().detach(observer),
         }
     }
@@ -171,7 +171,7 @@ impl From<Arc<Mutex<ExpandedVideo<tf_yt::YTVideo>>>> for AnyVideo {
     }
 }
 
-#[cfg(feature = "testPlatform")]
+#[cfg(test)]
 impl From<Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>> for AnyVideo {
     fn from(v: Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>) -> Self {
         AnyVideo::Test(v)

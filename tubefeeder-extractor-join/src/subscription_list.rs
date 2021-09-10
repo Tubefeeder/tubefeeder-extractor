@@ -20,7 +20,7 @@
 use std::sync::{Arc, Mutex};
 
 use tf_core::{Observable, ObserverList, SubscriptionList};
-#[cfg(feature = "testPlatform")]
+#[cfg(test)]
 use tf_test::TestSubscription;
 
 #[cfg(feature = "youtube")]
@@ -34,7 +34,7 @@ pub struct AnySubscriptionList {
 
     #[cfg(feature = "youtube")]
     yt_subscriptions: Arc<Mutex<SubscriptionList<YTSubscription>>>,
-    #[cfg(feature = "testPlatform")]
+    #[cfg(test)]
     test_subscriptions: Arc<Mutex<SubscriptionList<TestSubscription>>>,
 }
 
@@ -45,7 +45,7 @@ impl AnySubscriptionList {
 
             #[cfg(feature = "youtube")]
             yt_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             test_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
         }
     }
@@ -55,7 +55,7 @@ impl AnySubscriptionList {
         self.yt_subscriptions = sub;
     }
 
-    #[cfg(feature = "testPlatform")]
+    #[cfg(test)]
     pub(crate) fn test_subscriptions(
         &mut self,
         sub: Arc<Mutex<SubscriptionList<TestSubscription>>>,
@@ -67,18 +67,17 @@ impl AnySubscriptionList {
         match subscription.clone() {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(sub) => self.yt_subscriptions.lock().unwrap().add(sub),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnySubscription::Test(sub) => self.test_subscriptions.lock().unwrap().add(sub),
         }
         self.observers.notify(SubscriptionEvent::Add(subscription))
     }
 
     pub fn remove(&self, subscription: AnySubscription) {
-        log::debug!("Removing subscription {}", subscription);
         match subscription.clone() {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(sub) => self.yt_subscriptions.lock().unwrap().remove(sub),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnySubscription::Test(sub) => self.test_subscriptions.lock().unwrap().remove(sub),
         }
         self.observers
@@ -99,7 +98,7 @@ impl AnySubscriptionList {
                 .collect::<Vec<AnySubscription>>()
                 .clone(),
         );
-        #[cfg(feature = "testPlatform")]
+        #[cfg(test)]
         vec.append(
             &mut self
                 .test_subscriptions

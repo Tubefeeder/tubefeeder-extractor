@@ -23,7 +23,7 @@ use std::{convert::TryFrom, str::FromStr};
 pub enum AnySubscription {
     #[cfg(feature = "youtube")]
     Youtube(tf_yt::YTSubscription),
-    #[cfg(feature = "testPlatform")]
+    #[cfg(test)]
     Test(tf_test::TestSubscription),
 }
 
@@ -32,7 +32,7 @@ impl AnySubscription {
         match &self {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(_) => Platform::Youtube,
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnySubscription::Test(_) => Platform::Test,
         }
     }
@@ -41,7 +41,7 @@ impl AnySubscription {
         match &self {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(s) => s.name(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnySubscription::Test(s) => Some(s.name()),
         }
     }
@@ -52,7 +52,7 @@ impl std::fmt::Display for AnySubscription {
         match self {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(s) => write!(f, "{}", s),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnySubscription::Test(s) => write!(f, "{}", s),
         }
     }
@@ -73,7 +73,7 @@ impl TryFrom<&[&str]> for AnySubscription {
                     _ => Err(()),
                 }
             }
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             Some(Ok(Platform::Test)) => {
                 let id = value.get(1);
                 match id {
@@ -92,7 +92,7 @@ impl From<AnySubscription> for Vec<String> {
         match sub {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(s) => result.push(s.id()),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnySubscription::Test(s) => result.push(s.name()),
         }
 
@@ -107,7 +107,7 @@ impl From<tf_yt::YTSubscription> for AnySubscription {
     }
 }
 
-#[cfg(feature = "testPlatform")]
+#[cfg(test)]
 impl From<tf_test::TestSubscription> for AnySubscription {
     fn from(s: tf_test::TestSubscription) -> Self {
         AnySubscription::Test(s)
@@ -118,7 +118,7 @@ impl From<tf_test::TestSubscription> for AnySubscription {
 pub enum Platform {
     #[cfg(feature = "youtube")]
     Youtube,
-    #[cfg(feature = "testPlatform")]
+    #[cfg(test)]
     Test,
 }
 
@@ -130,7 +130,7 @@ impl FromStr for Platform {
         match value.as_ref() {
             #[cfg(feature = "youtube")]
             "youtube" => Ok(Platform::Youtube),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             "test" => Ok(Platform::Test),
             _ => Err(()),
         }
@@ -142,7 +142,7 @@ impl From<Platform> for String {
         match p {
             #[cfg(feature = "youtube")]
             Platform::Youtube => "youtube".to_owned(),
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             Platform::Test => "test".to_owned(),
         }
     }
@@ -153,7 +153,6 @@ mod test {
     use std::convert::TryInto;
 
     use super::*;
-    #[cfg(feature = "testPlatform")]
     use tf_test::TestSubscription;
     #[cfg(feature = "youtube")]
     use tf_yt::YTSubscription;
@@ -180,7 +179,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "testPlatform")]
     fn anysubscription_conversion_test() {
         let row = vec!["test", "abcdef"];
         let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
@@ -192,7 +190,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "testPlatform")]
     fn anysubscription_conversion_test_back() {
         let row = vec!["test", "abcdef"];
         let subscription: AnySubscription = TestSubscription::new("abcdef").into();

@@ -37,7 +37,7 @@ pub struct Joiner {
     filters: Arc<Mutex<FilterGroup<AnyVideo>>>,
     #[cfg(feature = "youtube")]
     yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,
-    #[cfg(feature = "testPlatform")]
+    #[cfg(test)]
     test_pipeline: Pipeline<tf_test::TestSubscription, tf_test::TestVideo>,
 }
 
@@ -45,20 +45,20 @@ impl Joiner {
     pub fn new() -> Self {
         #[cfg(feature = "youtube")]
         let yt_pipeline = Pipeline::new();
-        #[cfg(feature = "testPlatform")]
+        #[cfg(test)]
         let test_pipeline = Pipeline::new();
 
         let mut subscriptions = AnySubscriptionList::default();
         #[cfg(feature = "youtube")]
         subscriptions.yt_subscriptions(yt_pipeline.subscription_list());
-        #[cfg(feature = "testPlatform")]
+        #[cfg(test)]
         subscriptions.test_subscriptions(test_pipeline.subscription_list());
 
         Joiner {
             subscription_list: subscriptions,
             #[cfg(feature = "youtube")]
             yt_pipeline,
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             test_pipeline,
             filters: Arc::new(Mutex::new(FilterGroup::new())),
         }
@@ -78,7 +78,7 @@ impl Joiner {
             AnySubscription::Youtube(s) => {
                 self.yt_pipeline.subscription_list().lock().unwrap().add(s)
             }
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnySubscription::Test(s) => self
                 .test_pipeline
                 .subscription_list()
@@ -113,7 +113,7 @@ impl Generator for Joiner {
             let iter_mapped = iter.map(|v| v.into());
             Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>
         }));
-        #[cfg(feature = "testPlatform")]
+        #[cfg(test)]
         generators.push(Box::pin(async {
             let iter = self.test_pipeline.generate(errors).await;
             let iter_mapped = iter.map(|v| v.into());

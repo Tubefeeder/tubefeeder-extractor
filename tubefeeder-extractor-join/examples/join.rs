@@ -24,14 +24,14 @@ use std::sync::{Arc, Mutex};
 use tf_core::{ErrorStore, Generator};
 use tf_join::{AnySubscription, AnyVideo, Joiner};
 
-#[cfg(feature = "testPlatform")]
+#[cfg(test)]
 use tf_test::TestSubscription;
 #[cfg(feature = "youtube")]
 use tf_yt::YTSubscription;
 
 #[cfg(feature = "youtube")]
 const YT_SUBSCRIPTION_IDS: &'static [&'static str] = &["UCj1VqrHhDte54oLgPG4xpuQ"];
-#[cfg(feature = "testPlatform")]
+#[cfg(test)]
 const TEST_SUBSCRIPTION_NAMES: &'static [&'static str] = &["Test1", "Test2"];
 
 #[tokio::main(flavor = "current_thread")]
@@ -49,7 +49,7 @@ pub async fn main() {
         .map(|id| YTSubscription::new(id).into())
         .for_each(|sub: AnySubscription| subscription_list.add(sub));
 
-    #[cfg(feature = "testPlatform")]
+    #[cfg(test)]
     TEST_SUBSCRIPTION_NAMES
         .iter()
         .map(|name| TestSubscription::new(name).into())
@@ -60,7 +60,7 @@ pub async fn main() {
         let source = match &video {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(_v) => "YouT",
-            #[cfg(feature = "testPlatform")]
+            #[cfg(test)]
             AnyVideo::Test(_v) => "Test",
         };
 
