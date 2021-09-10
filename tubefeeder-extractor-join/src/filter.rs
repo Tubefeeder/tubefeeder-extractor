@@ -26,7 +26,7 @@ use crate::{AnyVideo, Platform};
 
 use tf_filter::Filter;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AnyVideoFilter {
     platform: Option<Platform>,
     title: Option<Regex>,
@@ -57,14 +57,18 @@ impl AnyVideoFilter {
             subscription,
         }
     }
+
+    pub fn title_str(&self) -> Option<String> {
+        self.title.clone().map(|r| r.to_string())
+    }
+
+    pub fn subscription_str(&self) -> Option<String> {
+        self.subscription.clone().map(|r| r.to_string())
+    }
 }
 
 impl Filter for AnyVideoFilter {
     type Item = AnyVideo;
-
-    fn id(&self) -> u64 {
-        todo!()
-    }
 
     fn matches(&self, video: &<Self as Filter>::Item) -> bool {
         if let Some(platform) = &self.platform {

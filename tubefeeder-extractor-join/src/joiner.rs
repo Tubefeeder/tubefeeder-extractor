@@ -28,13 +28,13 @@ use tf_filter::{Filter, FilterGroup};
 
 use async_trait::async_trait;
 
-use crate::{AnySubscription, AnySubscriptionList, AnyVideo};
+use crate::{AnySubscription, AnySubscriptionList, AnyVideo, AnyVideoFilter};
 
 #[derive(Clone)]
 pub struct Joiner {
     subscription_list: AnySubscriptionList,
 
-    filters: Arc<Mutex<FilterGroup<AnyVideo>>>,
+    filters: Arc<Mutex<FilterGroup<AnyVideoFilter>>>,
     #[cfg(feature = "youtube")]
     yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,
     #[cfg(test)]
@@ -68,7 +68,7 @@ impl Joiner {
         self.subscription_list.clone()
     }
 
-    pub fn filters(&self) -> Arc<Mutex<FilterGroup<AnyVideo>>> {
+    pub fn filters(&self) -> Arc<Mutex<FilterGroup<AnyVideoFilter>>> {
         self.filters.clone()
     }
 

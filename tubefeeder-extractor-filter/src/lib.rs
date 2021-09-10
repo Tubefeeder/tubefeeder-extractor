@@ -1,45 +1,71 @@
-use std::{collections::hash_map::DefaultHasher, hash::Hasher};
+use std::sync::{Mutex, Weak};
+
+use tf_core::{Observable, Observer, ObserverList};
 
 pub trait Filter {
     type Item;
 
     fn matches(&self, item: &Self::Item) -> bool;
-
-    /// Get a identifier similar to a hash for the filter.
-    fn id(&self) -> u64;
 }
 
 pub struct FilterGroup<T> {
-    filters: Vec<Box<dyn Filter<Item = T> + Send>>,
+    observers: ObserverList<FilterEvent<T>>,
+
+    filters: Vec<T>,
 }
 
 impl<T> FilterGroup<T> {
     pub fn new() -> Self {
-        Self { filters: vec![] }
+        Self {
+            filters: vec![],
+            observers: ObserverList::new(),
+        }
     }
 
-    pub fn add<F: 'static + Filter<Item = T> + Send>(&mut self, filter: F) {
-        self.filters
-            .push(Box::new(filter) as Box<dyn Filter<Item = T> + Send>);
-    }
-
-    pub fn remove<F: 'static + Filter<Item = T>>(&mut self, filter: &F) {
-        self.filters.retain(|f| f.id() == filter.id())
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.filters.iter()
     }
 }
 
-impl<T> Filter for FilterGroup<T> {
-    type Item = T;
+impl<T: Clone> FilterGroup<T> {
+    pub fn add(&mut self, filter: T) {
+        self.filters.push(filter.clone());
+        self.observers.notify(FilterEvent::Add(filter));
+    }
+}
+
+impl<T: PartialEq + Clone> FilterGroup<T> {
+    pub fn remove(&mut self, filter: &T) {
+        self.filters.retain(|t| t != filter);
+        self.observers.notify(FilterEvent::Remove(filter.clone()));
+    }
+}
+
+impl<I, T: Filter<Item = I>> Filter for FilterGroup<T> {
+    type Item = I;
 
     fn matches(&self, item: &Self::Item) -> bool {
         self.filters.iter().any(move |f| f.matches(item))
     }
+}
 
-    fn id(&self) -> u64 {
-        let mut s = DefaultHasher::new();
-        for f in &self.filters {
-            s.write_u64(f.id());
-        }
-        s.finish()
+#[derive(Clone)]
+pub enum FilterEvent<T> {
+    Add(T),
+    Remove(T),
+}
+
+impl<T: Clone> Observable<FilterEvent<T>> for FilterGroup<T> {
+    fn attach(
+        &mut self,
+        observer: Weak<Mutex<Box<(dyn Observer<FilterEvent<T>> + Send + 'static)>>>,
+    ) {
+        self.observers.attach(observer);
+    }
+    fn detach(
+        &mut self,
+        observer: Weak<Mutex<Box<(dyn Observer<FilterEvent<T>> + Send + 'static)>>>,
+    ) {
+        self.observers.detach(observer);
     }
 }

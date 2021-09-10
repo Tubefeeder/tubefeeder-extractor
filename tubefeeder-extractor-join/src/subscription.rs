@@ -114,7 +114,7 @@ impl From<tf_test::TestSubscription> for AnySubscription {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Platform {
     #[cfg(feature = "youtube")]
     Youtube,
