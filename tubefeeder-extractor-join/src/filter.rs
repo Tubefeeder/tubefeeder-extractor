@@ -45,6 +45,17 @@ impl PartialEq for AnyVideoFilter {
 
 impl Eq for AnyVideoFilter {}
 
+impl std::hash::Hash for AnyVideoFilter {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.platform.hash(state);
+        self.title.as_ref().map(|r| r.to_string()).hash(state);
+        self.subscription
+            .as_ref()
+            .map(|r| r.to_string())
+            .hash(state);
+    }
+}
+
 impl AnyVideoFilter {
     pub fn new(
         platform: Option<Platform>,
