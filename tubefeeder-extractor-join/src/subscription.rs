@@ -17,7 +17,7 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::convert::{TryFrom, TryInto};
+use std::{convert::TryFrom, str::FromStr};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Ord, PartialOrd)]
 pub enum AnySubscription {
@@ -34,6 +34,15 @@ impl AnySubscription {
             AnySubscription::Youtube(_) => Platform::Youtube,
             #[cfg(feature = "testPlatform")]
             AnySubscription::Test(_) => Platform::Test,
+        }
+    }
+
+    pub fn name(&self) -> Option<String> {
+        match &self {
+            #[cfg(feature = "youtube")]
+            AnySubscription::Youtube(s) => s.name(),
+            #[cfg(feature = "testPlatform")]
+            AnySubscription::Test(s) => Some(s.name()),
         }
     }
 }
@@ -54,7 +63,7 @@ impl TryFrom<&[&str]> for AnySubscription {
     type Error = ();
 
     fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
-        let platform = value.get(0).map(|&p| p.try_into());
+        let platform = value.get(0).map(|&p| Platform::from_str(p));
         match platform {
             #[cfg(feature = "youtube")]
             Some(Ok(Platform::Youtube)) => {
@@ -113,12 +122,12 @@ pub enum Platform {
     Test,
 }
 
-impl TryFrom<&str> for Platform {
+impl FromStr for Platform {
     // TODO: Error handling
-    type Error = ();
+    type Err = ();
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.as_ref() {
             #[cfg(feature = "youtube")]
             "youtube" => Ok(Platform::Youtube),
             #[cfg(feature = "testPlatform")]
@@ -141,6 +150,8 @@ impl From<Platform> for String {
 
 #[cfg(test)]
 mod test {
+    use std::convert::TryInto;
+
     use super::*;
     #[cfg(feature = "testPlatform")]
     use tf_test::TestSubscription;

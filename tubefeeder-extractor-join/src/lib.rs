@@ -17,11 +17,13 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod filter;
 mod joiner;
 mod subscription;
 mod subscription_list;
 mod video;
 
+pub use crate::filter::AnyVideoFilter;
 pub use crate::joiner::Joiner;
 pub use crate::subscription::AnySubscription;
 pub use crate::subscription::Platform;

@@ -55,6 +55,16 @@ impl Video for TestVideo {
     }
 }
 
+impl TestVideo {
+    pub fn new<S: AsRef<str>>(title: S, subscription: TestSubscription) -> Self {
+        Self {
+            title: title.as_ref().to_string(),
+            subscription,
+            uploaded: chrono::NaiveDate::from_ymd(2021, 1, 1).and_hms(20, 10, 0),
+        }
+    }
+}
+
 impl std::fmt::Display for TestSubscription {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
@@ -83,12 +93,6 @@ impl Subscription for TestSubscription {
         };
 
         vec![video1, video2].into_iter()
-    }
-}
-
-impl TestVideo {
-    pub fn title(&self) -> String {
-        self.title.clone()
     }
 }
 

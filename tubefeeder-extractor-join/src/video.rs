@@ -24,7 +24,7 @@ use std::{
 
 use tf_core::{ExpandedVideo, Observable, Video};
 
-use crate::AnySubscription;
+use crate::{AnySubscription, Platform};
 
 #[derive(Clone)]
 pub enum AnyVideo {
@@ -125,6 +125,15 @@ impl AnyVideo {
             AnyVideo::Youtube(yt) => yt.lock().unwrap().playing(),
             #[cfg(feature = "testPlatform")]
             AnyVideo::Test(test) => test.lock().unwrap().playing(),
+        }
+    }
+
+    pub fn platform(&self) -> Platform {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(_yt) => Platform::Youtube,
+            #[cfg(feature = "testPlatform")]
+            AnyVideo::Test(_test) => Platform::Test,
         }
     }
 }

@@ -7,11 +7,13 @@ edition = "2018"
 
 [dependencies]
 tf_core = { package = "tubefeeder-extractor-core", path = "../tubefeeder-extractor-core" }
+tf_filter = { package = "tubefeeder-extractor-filter", path = "../tubefeeder-extractor-filter"}
 tf_yt = { package = "tubefeeder-extractor-youtube", path = "../tubefeeder-extractor-youtube", optional = true}
 tf_test = { package = "tubefeeder-extractor-test", path = "../tubefeeder-extractor-test" , optional = true}
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
+regex = "^1.5"
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
 tokio = { version = "^1.9", features = [ "macros" ] }
 futures = "^0.3"

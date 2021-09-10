@@ -24,6 +24,7 @@ use std::{
 };
 
 use tf_core::{ErrorStore, Generator, Pipeline};
+use tf_filter::{Filter, FilterGroup};
 
 use async_trait::async_trait;
 
@@ -32,6 +33,8 @@ use crate::{AnySubscription, AnySubscriptionList, AnyVideo};
 #[derive(Clone)]
 pub struct Joiner {
     subscription_list: AnySubscriptionList,
+
+    filters: Arc<Mutex<FilterGroup<AnyVideo>>>,
     #[cfg(feature = "youtube")]
     yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,
     #[cfg(feature = "testPlatform")]
@@ -57,11 +60,16 @@ impl Joiner {
             yt_pipeline,
             #[cfg(feature = "testPlatform")]
             test_pipeline,
+            filters: Arc::new(Mutex::new(FilterGroup::new())),
         }
     }
 
     pub fn subscription_list(&self) -> AnySubscriptionList {
         self.subscription_list.clone()
+    }
+
+    pub fn filters(&self) -> Arc<Mutex<FilterGroup<AnyVideo>>> {
+        self.filters.clone()
     }
 
     pub fn subscribe(&self, subscription: AnySubscription) {
@@ -118,6 +126,7 @@ impl Generator for Joiner {
             .map(|i| i.collect())
             .collect::<Vec<Vec<AnyVideo>>>()
             .concat();
+        videos.retain(|v| !self.filters.lock().unwrap().matches(v));
         videos.sort_by_cached_key(|v| v.uploaded());
         videos.reverse();
         videos.into_iter()

@@ -5,7 +5,7 @@ This could of course also be used for other projects.
 
 ## Supported Features
 
-Currently only subscribing to a channel is supported, with plans to integrate playlists, filters and "currently playing".
+Currently subscribing, filters and "currently playing" are supported, with plans to integrate playlists.
 
 ## Supported Platforms
 
