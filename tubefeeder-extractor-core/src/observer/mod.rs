@@ -25,6 +25,7 @@
 //! [`attached`][ObserverList::attach], [`detached`][ObserverList::detach] and
 //! [`notified`][ObserverList::notify].
 
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::Weak;
 
@@ -57,24 +58,22 @@ pub trait Observable<T> {
 #[derive(Clone)]
 pub struct ObserverList<T> {
     /// The [`Observer<T>`] list.
-    observers: Vec<Weak<Mutex<Box<dyn Observer<T> + Send>>>>,
+    observers: Arc<Mutex<Vec<Weak<Mutex<Box<dyn Observer<T> + Send>>>>>>,
 }
 
 impl<T> ObserverList<T> {
     /// Create a new [`ObserverList<T>`] with no [`Observer`]s.
     pub fn new() -> Self {
-        ObserverList { observers: vec![] }
+        ObserverList {
+            observers: Arc::new(Mutex::new(vec![])),
+        }
     }
 
     /// Attach a [`Observer<T>`] to the [`ObserverList`].
     pub fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
-        if self
-            .observers
-            .iter()
-            .find(|o| o.ptr_eq(&observer))
-            .is_none()
-        {
-            self.observers.push(observer);
+        let mut observers = self.observers.lock().unwrap();
+        if observers.iter().find(|o| o.ptr_eq(&observer)).is_none() {
+            observers.push(observer);
         }
     }
 
@@ -82,6 +81,8 @@ impl<T> ObserverList<T> {
     /// This will also detach all dropped [`Observer`]s.
     pub fn detach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
         self.observers
+            .lock()
+            .unwrap()
             .retain(|o| o.upgrade().is_some() && !o.ptr_eq(&observer));
     }
 }
@@ -90,13 +91,22 @@ impl<T: Clone> ObserverList<T> {
     /// Notify all [`Observer<T>`] in the list with the given message.
     /// Only a clone of the message and not the real object will be sent.
     pub fn notify(&self, message: T) {
-        self.observers.iter().for_each(|o| {
+        self.observers.lock().unwrap().iter().for_each(|o| {
             if let Some(mutex) = o.upgrade() {
                 if let Ok(mut observer) = mutex.lock() {
                     observer.notify(message.clone());
                 }
             }
         })
+    }
+
+    pub fn count(&self) -> usize {
+        self.observers
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|r| r.upgrade().is_some())
+            .count()
     }
 }
 
@@ -125,7 +135,7 @@ mod test {
 
         assert_eq!(
             1,
-            observer_list.observers.len(),
+            observer_list.count(),
             "The observable does not have the correct amount of observers"
         );
 
@@ -133,7 +143,7 @@ mod test {
 
         assert_eq!(
             0,
-            observer_list.observers.len(),
+            observer_list.count(),
             "The observable does not have the correct amount of observers"
         );
     }
@@ -208,7 +218,7 @@ mod test {
 
         assert_eq!(
             1,
-            observer_list.observers.len(),
+            observer_list.observers.lock().unwrap().len(),
             "The observable does not have the correct amount of observers"
         );
 
@@ -216,7 +226,7 @@ mod test {
 
         assert_eq!(
             1,
-            observer_list.observers.len(),
+            observer_list.observers.lock().unwrap().len(),
             "The observable does not have the correct amount of observers"
         );
 
@@ -225,7 +235,7 @@ mod test {
 
         assert_eq!(
             0,
-            observer_list.observers.len(),
+            observer_list.observers.lock().unwrap().len(),
             "The observable does not have the correct amount of observers"
         );
     }
@@ -249,7 +259,7 @@ mod test {
 
         assert_eq!(
             1,
-            observer_list.observers.len(),
+            observer_list.count(),
             "The observable does not have the correct amount of observers"
         );
 
@@ -257,7 +267,36 @@ mod test {
 
         assert_eq!(
             1,
-            observer_list2.observers.len(),
+            observer_list2.count(),
+            "The observable does not have the correct amount of observers"
+        );
+
+        observer_list2.notify(10);
+    }
+
+    #[test]
+    fn observer_list_test_clone_pre_attach() {
+        let mut observer_list = ObserverList::new();
+
+        let mut observer1 = MockObserver::new();
+        observer1
+            .expect_notify()
+            .with(predicate::eq(10u64))
+            .times(1)
+            .returning(|_| ());
+
+        let observer1_ref = Arc::new(Mutex::new(
+            Box::new(observer1) as Box<dyn Observer<u64> + Send>
+        ));
+
+        let observer_list2 = observer_list.clone();
+
+        observer_list.attach(Arc::downgrade(&observer1_ref));
+        drop(observer_list);
+
+        assert_eq!(
+            1,
+            observer_list2.count(),
             "The observable does not have the correct amount of observers"
         );
 

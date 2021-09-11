@@ -17,8 +17,6 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::{Arc, Mutex};
-
 use async_trait::async_trait;
 
 use crate::{ErrorStore, Video};
@@ -41,13 +39,13 @@ pub trait Subscription:
 {
     type Video: crate::Video;
     type Iterator: Iterator<Item = Self::Video>;
-    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
+    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         self.generate_with_client(errors, &reqwest::Client::new())
             .await
     }
     async fn generate_with_client(
         &self,
-        errors: Arc<Mutex<ErrorStore>>,
+        errors: &ErrorStore,
         client: &reqwest::Client,
     ) -> Self::Iterator;
 }
@@ -62,7 +60,7 @@ where
 
     type Iterator = <S as Subscription>::Iterator;
 
-    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> <S as Subscription>::Iterator {
+    async fn generate(&self, errors: &ErrorStore) -> <S as Subscription>::Iterator {
         self.generate(errors).await
     }
 }
@@ -105,7 +103,7 @@ mock! {
     impl Subscription for Subscription {
         type Video = MockVideo;
         type Iterator = std::vec::IntoIter<MockVideo>;
-        async fn generate_with_client(&self, errors: Arc<Mutex<ErrorStore>>, client: &reqwest::Client) -> <Self as Subscription>::Iterator;
-        async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> <Self as Subscription>::Iterator;
+        async fn generate_with_client(&self, errors: &ErrorStore, client: &reqwest::Client) -> <Self as Subscription>::Iterator;
+        async fn generate(&self, errors: &ErrorStore) -> <Self as Subscription>::Iterator;
     }
 }

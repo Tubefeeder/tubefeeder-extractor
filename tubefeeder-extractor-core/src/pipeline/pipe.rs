@@ -72,7 +72,7 @@ where
 
     type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
 
-    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
+    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         self.store_access.generate(errors).await
     }
 }

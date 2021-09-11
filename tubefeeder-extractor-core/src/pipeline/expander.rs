@@ -20,7 +20,6 @@
 use crate::{ErrorStore, ExpandedVideo, Generator, Video};
 
 use std::marker::PhantomData;
-use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 
@@ -41,7 +40,7 @@ where
 
     type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
 
-    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
+    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         let iterator = self.generator.generate(errors).await;
         let mapped_iterator: Box<dyn Iterator<Item = ExpandedVideo<V>> + std::marker::Send> =
             Box::new(iterator.map(|v| v.into()))

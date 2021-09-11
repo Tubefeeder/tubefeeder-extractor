@@ -52,9 +52,9 @@ where
     // type Iterator = impl Iterator<Item = <Self as Generator>::Item>;
     type Iterator = Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
 
-    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
+    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         let store = self.store.clone();
-        let gen_iter = self.generator.generate(errors).await;
+        let gen_iter = self.generator.generate(&errors).await;
         let map = gen_iter.map(move |v| store.lock().unwrap().get(v));
         Box::new(map) as <Self as Generator>::Iterator
     }
@@ -89,8 +89,8 @@ mod test {
 
         let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
-        let errors = Arc::new(Mutex::new(ErrorStore::new()));
-        let mut result = store.generate(errors).await;
+        let errors = ErrorStore::new();
+        let mut result = store.generate(&errors).await;
 
         let arc1 = result.next();
         let arc2 = result.next();
@@ -113,8 +113,8 @@ mod test {
 
         let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
-        let errors = Arc::new(Mutex::new(ErrorStore::new()));
-        let mut result = store.generate(errors).await;
+        let errors = ErrorStore::new();
+        let mut result = store.generate(&errors).await;
 
         let arc1 = result.next();
         let arc2 = result.next();
@@ -144,13 +144,13 @@ mod test {
 
         let store = StoreAccess::new(Arc::new(Mutex::new(VideoStore::new())), generator);
 
-        let errors = Arc::new(Mutex::new(ErrorStore::new()));
-        let mut result_1 = store.generate(errors.clone()).await;
+        let errors = ErrorStore::new();
+        let mut result_1 = store.generate(&errors).await;
 
         let arc1_1 = result_1.next();
         let arc1_2 = result_1.next();
 
-        let mut result_2 = store.generate(errors).await;
+        let mut result_2 = store.generate(&errors).await;
 
         let arc2_1 = result_2.next();
         let arc2_2 = result_2.next();

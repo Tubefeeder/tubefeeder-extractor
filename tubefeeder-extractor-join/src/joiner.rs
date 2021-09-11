@@ -95,7 +95,7 @@ impl Generator for Joiner {
 
     type Iterator = std::vec::IntoIter<AnyVideo>;
 
-    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
+    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         // TODO: Error handling
         // TODO: More efficient
         let mut generators: Vec<
@@ -107,9 +107,8 @@ impl Generator for Joiner {
             >,
         > = vec![];
         #[cfg(feature = "youtube")]
-        let errors_clone = errors.clone();
         generators.push(Box::pin(async move {
-            let iter = self.yt_pipeline.generate(errors_clone).await;
+            let iter = self.yt_pipeline.generate(errors).await;
             let iter_mapped = iter.map(|v| v.into());
             Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>
         }));

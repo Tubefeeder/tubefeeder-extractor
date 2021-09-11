@@ -17,8 +17,6 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::{Arc, Mutex};
-
 use async_trait::async_trait;
 
 use crate::ErrorStore;
@@ -30,7 +28,7 @@ use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 pub trait Generator {
     type Item;
     type Iterator: Iterator<Item = Self::Item>;
-    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator;
+    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator;
 }
 
 #[cfg(test)]
@@ -41,6 +39,6 @@ mock! {
     impl Generator for Generator {
         type Item = MockVideo;
         type Iterator = std::vec::IntoIter<MockVideo>;
-        async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> <Self as Generator>::Iterator;
+        async fn generate(&self, errors: &ErrorStore) -> <Self as Generator>::Iterator;
     }
 }

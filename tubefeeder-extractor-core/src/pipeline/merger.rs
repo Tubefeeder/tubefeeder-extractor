@@ -20,8 +20,7 @@
 use crate::{ErrorStore, Generator};
 use crate::{Subscription, SubscriptionList, Video};
 
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 
@@ -55,7 +54,7 @@ where
 
     type Iterator = std::vec::IntoIter<V>;
 
-    async fn generate(&self, errors: Arc<Mutex<ErrorStore>>) -> Self::Iterator {
+    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         let subscriptions = self.subscription_list.lock().unwrap().subscriptions();
         log::debug!("Starting getting subscriptions");
         let client = reqwest::Client::builder()
@@ -65,7 +64,7 @@ where
         let results = futures::future::join_all(
             subscriptions
                 .iter()
-                .map(|s| s.generate_with_client(errors.clone(), &client)),
+                .map(|s| s.generate_with_client(&errors, &client)),
         )
         .await;
         log::debug!("Finished getting subscriptions");
@@ -99,8 +98,8 @@ mod test {
             Arc::new(Mutex::new(SubscriptionList::new()));
         let merger: Merger<MockSubscription, MockVideo> = Merger::new(subscriptions);
 
-        let errors = Arc::new(Mutex::new(ErrorStore::new()));
-        let mut result = merger.generate(errors).await;
+        let errors = ErrorStore::new();
+        let mut result = merger.generate(&errors).await;
 
         assert!(result.next().is_none());
     }
@@ -148,8 +147,8 @@ mod test {
             .unwrap()
             .add(make_subscription(vec![date_video1, date_video2]));
 
-        let errors = Arc::new(Mutex::new(ErrorStore::new()));
-        let mut result = merger.generate(errors).await;
+        let errors = ErrorStore::new();
+        let mut result = merger.generate(&errors).await;
 
         assert_eq!(result.next().unwrap().uploaded(), date_video1);
         assert_eq!(result.next().unwrap().uploaded(), date_video2);
@@ -178,8 +177,8 @@ mod test {
             .unwrap()
             .add(make_subscription(vec![date_video2, date_video4]));
 
-        let errors = Arc::new(Mutex::new(ErrorStore::new()));
-        let mut result = merger.generate(errors).await;
+        let errors = ErrorStore::new();
+        let mut result = merger.generate(&errors).await;
 
         assert_eq!(result.next().unwrap().uploaded(), date_video1);
         assert_eq!(result.next().unwrap().uploaded(), date_video2);

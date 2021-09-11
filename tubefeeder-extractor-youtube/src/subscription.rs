@@ -17,8 +17,6 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::{Arc, Mutex};
-
 use crate::{structure::Feed, video::YTVideo};
 
 use async_trait::async_trait;
@@ -81,29 +79,29 @@ impl tf_core::Subscription for YTSubscription {
     type Iterator = std::vec::IntoIter<Self::Video>;
     async fn generate_with_client(
         &self,
-        errors: Arc<Mutex<ErrorStore>>,
+        errors: &ErrorStore,
         client: &reqwest::Client,
     ) -> Self::Iterator {
         log::debug!(
             "Generating YT videos from channel {}",
             self.name().unwrap_or_else(|| self.id())
         );
-        let result = client
-            .get(format!("{}{}", feed_url(), self.id()))
-            .send()
-            .await;
-        if let Err(e) = result {
-            errors.lock().unwrap().add(
-                NetworkError(e.url().map(|u| u.as_str().to_owned()).unwrap_or_default()).into(),
-            );
+
+        let url = format!("{}{}", feed_url(), self.id());
+        let result = client.get(&url).send().await;
+        if let Err(_e) = result {
+            errors.add(NetworkError(url).into());
+            return vec![].into_iter();
+        }
+
+        if !result.as_ref().unwrap().status().is_success() {
+            errors.add(NetworkError(url).into());
             return vec![].into_iter();
         }
 
         let body = result.unwrap().text().await;
-        if let Err(e) = body {
-            errors.lock().unwrap().add(
-                NetworkError(e.url().map(|u| u.as_str().to_owned()).unwrap_or_default()).into(),
-            );
+        if let Err(_e) = body {
+            errors.add(NetworkError(url).into());
             return vec![].into_iter();
         }
 
@@ -112,10 +110,7 @@ impl tf_core::Subscription for YTSubscription {
 
         let parsed = quick_xml::de::from_str::<Feed>(&body_parsable);
         if let Err(_e) = parsed {
-            errors
-                .lock()
-                .unwrap()
-                .add(tf_core::ParseError(format!("channel {}", self.id())).into());
+            errors.add(tf_core::ParseError(format!("channel {}", self.id())).into());
             return vec![].into_iter();
         }
 
@@ -160,12 +155,45 @@ mod test {
             .with_body(include_str!("../resources/test/youtubefeed.xml"))
             .create();
 
-        let errors = Arc::new(Mutex::new(ErrorStore::new()));
+        let errors = ErrorStore::new();
 
         let videos = YTSubscription::new("ThisIsAChannelId")
-            .generate(errors)
+            .generate(&errors)
             .await;
 
         assert_eq!(videos.collect::<Vec<_>>(), expected_videos());
+    }
+
+    #[tokio::test]
+    async fn youtube_generator_parse_error() {
+        let _m = mock("GET", Matcher::Regex(r"^/youtube/".to_string()))
+            .with_status(200)
+            .with_body(include_str!("../resources/test/youtubefeed_invalid.xml"))
+            .create();
+
+        let errors = ErrorStore::new();
+
+        let videos = YTSubscription::new("ThisIsAChannelId")
+            .generate(&errors)
+            .await;
+
+        assert_eq!(videos.count(), 0);
+        assert_eq!(errors.summary().parse(), 1);
+        assert_eq!(errors.summary().network(), 0);
+    }
+
+    #[tokio::test]
+    async fn youtube_generator_network_error() {
+        let _m = mock("GET", Matcher::Regex(r"$a".to_string())).create();
+
+        let errors = ErrorStore::new();
+
+        let videos = YTSubscription::new("ThisIsAChannelId")
+            .generate(&errors)
+            .await;
+
+        assert_eq!(videos.count(), 0);
+        assert_eq!(errors.summary().parse(), 0);
+        assert_eq!(errors.summary().network(), 1);
     }
 }

@@ -30,7 +30,7 @@ pub use definitions::expanded_video::VideoEvent;
 pub use definitions::generator::Generator;
 pub use definitions::subscription::Subscription;
 pub use definitions::video::Video;
-pub use error::{Error, ErrorStore, NetworkError, ParseError};
+pub use error::{Error, ErrorEvent, ErrorStore, NetworkError, ParseError};
 pub use observer::{Observable, Observer, ObserverList};
 pub use pipeline::expander::Expander;
 pub use pipeline::pipe::Pipeline;

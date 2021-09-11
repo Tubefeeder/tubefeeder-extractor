@@ -22,7 +22,12 @@
 //! Errors can occur when something can not be parsed (see [`quick_xml::de::DeError`]) or
 //! a url on the web cannot be reached (see [`reqwest::Error`]).
 
-use std::fmt;
+use std::{
+    fmt,
+    sync::{Arc, Mutex},
+};
+
+use crate::{Observable, ObserverList};
 
 /// The collection of all errors that can occur.
 #[derive(Debug, Clone)]
@@ -78,21 +83,58 @@ impl From<NetworkError> for Error {
     }
 }
 
+#[derive(Clone)]
 pub struct ErrorStore {
-    errors: Vec<Error>,
+    observers: ObserverList<ErrorEvent>,
+
+    errors: Arc<Mutex<Vec<Error>>>,
 }
 
 impl ErrorStore {
     pub fn new() -> Self {
-        ErrorStore { errors: vec![] }
+        ErrorStore {
+            errors: Arc::new(Mutex::new(vec![])),
+            observers: ObserverList::new(),
+        }
     }
 
-    pub fn add(&mut self, error: Error) {
-        self.errors.push(error);
+    pub fn add(&self, error: Error) {
+        self.errors.lock().unwrap().push(error.clone());
+        self.observers.notify(ErrorEvent::Add(error))
+    }
+
+    pub fn clear(&self) {
+        self.errors.lock().unwrap().clear();
+        self.observers.notify(ErrorEvent::Clear)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Error> {
-        self.errors.clone().into_iter()
+        self.errors.lock().unwrap().clone().into_iter()
+    }
+
+    pub fn summary(&self) -> ErrorSummary {
+        let parse = self
+            .iter()
+            .filter(|e| {
+                if let Error::ParseError(_) = e {
+                    return true;
+                } else {
+                    return false;
+                }
+            })
+            .count();
+        let network = self
+            .iter()
+            .filter(|e| {
+                if let Error::NetworkError(_) = e {
+                    return true;
+                } else {
+                    return false;
+                }
+            })
+            .count();
+
+        ErrorSummary { parse, network }
     }
 }
 
@@ -102,20 +144,84 @@ impl Default for ErrorStore {
     }
 }
 
+pub struct ErrorSummary {
+    parse: usize,
+    network: usize,
+}
+
+impl ErrorSummary {
+    pub fn parse(&self) -> usize {
+        self.parse
+    }
+
+    pub fn network(&self) -> usize {
+        self.network
+    }
+}
+
+#[derive(Clone)]
+pub enum ErrorEvent {
+    Add(Error),
+    Clear,
+}
+
+impl Observable<ErrorEvent> for ErrorStore {
+    fn attach(
+        &mut self,
+        observer: std::sync::Weak<Mutex<Box<dyn crate::Observer<ErrorEvent> + Send>>>,
+    ) {
+        self.observers.attach(observer);
+    }
+
+    fn detach(
+        &mut self,
+        observer: std::sync::Weak<Mutex<Box<dyn crate::Observer<ErrorEvent> + Send>>>,
+    ) {
+        self.observers.detach(observer);
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
-    fn add_error(store: &mut ErrorStore) {
+    fn add_network_error(store: &ErrorStore) {
         store.add(NetworkError("Url".to_owned()).into())
     }
 
+    fn add_parse_error(store: &ErrorStore) {
+        store.add(ParseError("Parse".to_owned()).into())
+    }
+
     #[test]
-    fn errorstore() {
-        let mut store = ErrorStore::new();
-        add_error(&mut store);
-        add_error(&mut store);
+    fn errorstore_add() {
+        let store = ErrorStore::new();
+        add_network_error(&store);
+        add_network_error(&store);
 
         assert_eq!(store.iter().count(), 2);
+    }
+
+    #[test]
+    fn errorstore_clear() {
+        let store = ErrorStore::new();
+        add_network_error(&store);
+        add_parse_error(&store);
+        store.clear();
+
+        assert_eq!(store.iter().count(), 0);
+    }
+
+    #[test]
+    fn errorstore_summary() {
+        let store = ErrorStore::new();
+        add_network_error(&store);
+        add_network_error(&store);
+        add_parse_error(&store);
+
+        let summary = store.summary();
+
+        assert_eq!(summary.parse(), 1);
+        assert_eq!(summary.network(), 2);
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=ThisIsAChannelId"/>
+ <id>yt:channel:ThisIsAChannelId</id>
+ <yt:channelId>ThisIsAChannelId</yt:channelId>
+ <title>ChannelName</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/ThisIsAChannelId"/>
+ <published>2020-07-22T18:32:54+02:00</published>
+ <entry>
+ </entry>
+ <entry>
+ </entry>
+</feed>
