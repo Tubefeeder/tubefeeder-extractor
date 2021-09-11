@@ -26,11 +26,15 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 
+/// The [Pipeline] generating [Video]s `V` from the [Subscription]s `S`.
 #[derive(Clone)]
 pub struct Pipeline<S, V> {
+    /// The [SubscriptionList] used in the [Merger].
     subscription_list: Arc<Mutex<SubscriptionList<S>>>,
+    /// The [VideoStore] used in the [Expander].
     _video_store: Arc<Mutex<VideoStore<ExpandedVideo<V>>>>,
 
+    /// The [Generator] to get the [Video]s from.
     store_access: StoreAccess<ExpandedVideo<V>, Expander<V, Merger<S, V>>>,
 }
 
@@ -40,6 +44,7 @@ where
     V: 'static + Video<Subscription = S>,
     <S as Subscription>::Iterator: std::marker::Send,
 {
+    /// Create a new [Pipeline] with no [Subscription]s.
     pub fn new() -> Self {
         let subscription_list = Arc::new(Mutex::new(SubscriptionList::new()));
         let _video_store = Arc::new(Mutex::new(VideoStore::new()));
@@ -56,6 +61,10 @@ where
         }
     }
 
+    /// Get the list of [Subscription]s used in the [Pipeline].
+    ///
+    /// Modifying this [SubscriptionList] will also alter the [Subscription]s in the
+    /// [Pipeline].
     pub fn subscription_list(&self) -> Arc<Mutex<SubscriptionList<S>>> {
         self.subscription_list.clone()
     }

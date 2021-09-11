@@ -24,9 +24,14 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 
+/// Merge the [Video]s generated from the [Subscription]s in the [SubscriptionList]
+/// into one [Iterator][std::iter::Iterator].
 #[derive(Clone)]
 pub(crate) struct Merger<S, V> {
+    /// The list of [Subscription]s.
     subscription_list: Arc<Mutex<SubscriptionList<S>>>,
+
+    /// Phantom data.
     _phantom: std::marker::PhantomData<V>,
 }
 
@@ -35,7 +40,8 @@ where
     S: Subscription<Video = V>,
     V: Video<Subscription = S>,
 {
-    pub fn new(subscriptions: Arc<Mutex<SubscriptionList<S>>>) -> Self {
+    /// Create a new [Merger] using the given [SubscriptionList].
+    pub(crate) fn new(subscriptions: Arc<Mutex<SubscriptionList<S>>>) -> Self {
         Merger {
             subscription_list: subscriptions,
             _phantom: std::marker::PhantomData,

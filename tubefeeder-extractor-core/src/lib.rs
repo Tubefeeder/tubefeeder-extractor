@@ -20,6 +20,21 @@
 // Usefull for StoreAccess in the future.
 // #![feature(type_alias_impl_trait)]
 
+//! The core-part of Tubefeeder-extractor containing definitions like:
+//!
+//! - [Video]
+//! - [ExpandedVideo]
+//! - [Subscription]
+//! - [SubscriptionList]
+//!
+//! The Observer-pattern used for many of the structs:
+//!
+//! - [Observer]
+//! - [Observable]
+//! - [ObserverList]
+//!
+//! And a [Pipeline] for merging together videos from one platform.
+
 mod definitions;
 mod error;
 mod observer;
@@ -30,12 +45,12 @@ pub use definitions::expanded_video::VideoEvent;
 pub use definitions::generator::Generator;
 pub use definitions::subscription::Subscription;
 pub use definitions::video::Video;
-pub use error::{Error, ErrorEvent, ErrorStore, NetworkError, ParseError};
+pub use error::{Error, ErrorEvent, ErrorStore, ErrorSummary, NetworkError, ParseError};
 pub use observer::{Observable, Observer, ObserverList};
-pub use pipeline::expander::Expander;
 pub use pipeline::pipe::Pipeline;
 pub use pipeline::subscription_list::SubscriptionList;
 
+use pipeline::expander::Expander;
 use pipeline::merger::Merger;
 use pipeline::store_access::StoreAccess;
 use pipeline::video_store::VideoStore;

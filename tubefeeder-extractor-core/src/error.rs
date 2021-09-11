@@ -19,8 +19,7 @@
 
 //! The Errors used in this crate.
 //!
-//! Errors can occur when something can not be parsed (see [`quick_xml::de::DeError`]) or
-//! a url on the web cannot be reached (see [`reqwest::Error`]).
+//! Errors can currently only occur when something can not be parsed or a url on the web cannot be reached.
 
 use std::{
     fmt,
@@ -39,10 +38,12 @@ pub enum Error {
 }
 
 /// A error parsing something.
+/// The variable should hold information about what cannot be parsed, e.g. the channel name or id.
 #[derive(Debug, Clone)]
 pub struct ParseError(pub String);
 
 /// A error accessing the internet.
+/// The variable should hold information about what url failed to request.
 #[derive(Debug, Clone)]
 pub struct NetworkError(pub String);
 
@@ -83,14 +84,18 @@ impl From<NetworkError> for Error {
     }
 }
 
+/// A [Observable] holding a list of [Error]s.
 #[derive(Clone)]
 pub struct ErrorStore {
+    /// The observers.
     observers: ObserverList<ErrorEvent>,
 
+    /// The errors.
     errors: Arc<Mutex<Vec<Error>>>,
 }
 
 impl ErrorStore {
+    /// Create a new [ErrorStore] without any observers and without any errors.
     pub fn new() -> Self {
         ErrorStore {
             errors: Arc::new(Mutex::new(vec![])),
@@ -98,20 +103,26 @@ impl ErrorStore {
         }
     }
 
+    /// Add the given [Error] to the store.
+    /// Will notify the observers using [ErrorEvent::Add].
     pub fn add(&self, error: Error) {
         self.errors.lock().unwrap().push(error.clone());
         self.observers.notify(ErrorEvent::Add(error))
     }
 
+    /// Clear the store of all errors.
+    /// Will notify the observers using [ErrorEvent::Clear].
     pub fn clear(&self) {
         self.errors.lock().unwrap().clear();
         self.observers.notify(ErrorEvent::Clear)
     }
 
+    /// Iterate over a copy of all errors.
     pub fn iter(&self) -> impl Iterator<Item = Error> {
         self.errors.lock().unwrap().clone().into_iter()
     }
 
+    /// Give a [ErrorSummary] of the [ErrorStore], e.g. how many of each [Error]-type are inside the store.
     pub fn summary(&self) -> ErrorSummary {
         let parse = self
             .iter()
@@ -144,24 +155,32 @@ impl Default for ErrorStore {
     }
 }
 
+/// Summarize the [Error]s held in a [ErrorStore] by counting the number of different [Error]-types.
 pub struct ErrorSummary {
+    /// [ParseError]s
     parse: usize,
+    /// [NetworkError]s
     network: usize,
 }
 
 impl ErrorSummary {
+    /// Give the amount of [ParseError]s int the [ErrorStore].
     pub fn parse(&self) -> usize {
         self.parse
     }
 
+    /// Give the amount of [NetworkError]s int the [ErrorStore].
     pub fn network(&self) -> usize {
         self.network
     }
 }
 
+/// A event from the [ErrorStore].
 #[derive(Clone)]
 pub enum ErrorEvent {
+    /// A new [Error] was added into the [ErrorStore]. See [ErrorStore::add].
     Add(Error),
+    /// The [ErrorStore] was cleared. See [ErrorStore::clear].
     Clear,
 }
 

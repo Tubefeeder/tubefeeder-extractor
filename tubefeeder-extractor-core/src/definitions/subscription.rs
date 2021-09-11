@@ -24,8 +24,8 @@ use crate::{ErrorStore, Video};
 #[cfg(test)]
 use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 
-/// A [`Subscription`] to a channel. The [`Subscription`][Subscription] must be able to generate
-/// [`Video`][crate::Video]s asyncronously.
+/// A [Subscription] to a channel. The [Subscription] must be able to generate
+/// [Video]s asyncronously.
 #[async_trait]
 pub trait Subscription:
     Clone
@@ -37,12 +37,21 @@ pub trait Subscription:
     + PartialOrd
     + Ord
 {
+    /// The type of video that will be generated.
     type Video: crate::Video;
+
+    /// The type of iterator that will be returned.
     type Iterator: Iterator<Item = Self::Video>;
+
+    /// Generate the [Video]s asyncronously with the default [reqwest::Client::new].
+    /// All [Error][crate::Error]s should be put into the given [ErrorStore].
     async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         self.generate_with_client(errors, &reqwest::Client::new())
             .await
     }
+
+    /// Generate the [Video]s asyncronously with the given [reqwest::Client].
+    /// All [Error][crate::Error]s should be put into the given [ErrorStore].
     async fn generate_with_client(
         &self,
         errors: &ErrorStore,

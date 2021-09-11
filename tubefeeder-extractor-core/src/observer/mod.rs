@@ -34,52 +34,72 @@ use mockall::predicate::*;
 #[cfg(test)]
 use mockall::*;
 
-/// A [`Observer`] observing a [`Observable<T>`].
-/// `T` is the message being sent from the [`Observable<T>`] to the [`Observer<T>`].
+/// A [Observer] observing a [Observable<T>].
+///
+/// `T` is the message being sent from the [Observable<T>] to the [Observer<T>].
 #[cfg_attr(test, automock)]
 pub trait Observer<T> {
-    /// The [`Observable<T>`] sending a message to the [`Observer<T>`].
+    /// The [Observable<T>] sending a message to the [Observer<T>].
     fn notify(&mut self, message: T);
 }
 
-/// A [`Observable`] that can be observed by [`Observer<T>`]
-/// `T` is the message being sent from the [`Observable<T>`] to the [`Observer<T>`].
-/// This should be implemented using the [`ObserverList<T>`].
+/// A [Observable] that can be observed by [Observer<T>].
+///
+/// `T` is the message being sent from the [Observable<T>] to the [Observer<T>].
+/// This should be implemented using the [ObserverList<T>].
 pub trait Observable<T> {
-    /// Attach a [`Observer<T>`] to the [`Observable`].
-    /// Should be implemented using [`ObserverList::attach`].
+    /// Attach a [Observer<T>] to the [Observable].
+    ///
+    /// Should be implemented using [ObserverList::attach].
     fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>);
-    /// Detach a [`Observer<T>`] to the [`Observable`].
-    /// Should be implemented using [`ObserverList::detach`].
+
+    /// Detach a [Observer<T>] to the [Observable].
+    ///
+    /// Should be implemented using [ObserverList::detach].
     fn detach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>);
 }
 
-/// A list of [`Observer<T>`] using the message `T`.
+/// A list of [Observer<T>] using the message `T`.
 #[derive(Clone)]
 pub struct ObserverList<T> {
-    /// The [`Observer<T>`] list.
+    /// The [Observer<T>] list.
     observers: Arc<Mutex<Vec<Weak<Mutex<Box<dyn Observer<T> + Send>>>>>>,
 }
 
 impl<T> ObserverList<T> {
-    /// Create a new [`ObserverList<T>`] with no [`Observer`]s.
+    /// Create a new [ObserverList] with no [Observer]s.
     pub fn new() -> Self {
         ObserverList {
             observers: Arc::new(Mutex::new(vec![])),
         }
     }
 
-    /// Attach a [`Observer<T>`] to the [`ObserverList`].
-    pub fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
+    /// Give the count of active (not dropped) [Observer]s in the [ObserverList].
+    pub fn count(&self) -> usize {
+        self.observers
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|r| r.upgrade().is_some())
+            .count()
+    }
+}
+
+impl<T> Observable<T> for ObserverList<T> {
+    /// Attach a [Observer<T>] to the [ObserverList].
+    ///
+    /// This will check for duplicate [Observer]s using `Weak::ptr_eq` and not add them.
+    fn attach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
         let mut observers = self.observers.lock().unwrap();
         if observers.iter().find(|o| o.ptr_eq(&observer)).is_none() {
             observers.push(observer);
         }
     }
 
-    /// Detach a [`Observer<T>`] to the [`ObserverList`].
-    /// This will also detach all dropped [`Observer`]s.
-    pub fn detach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
+    /// Detach a [Observer<T>] to the [ObserverList].
+    ///
+    /// This will also detach all dropped [Observer]s.
+    fn detach(&mut self, observer: Weak<Mutex<Box<dyn Observer<T> + Send>>>) {
         self.observers
             .lock()
             .unwrap()
@@ -88,7 +108,8 @@ impl<T> ObserverList<T> {
 }
 
 impl<T: Clone> ObserverList<T> {
-    /// Notify all [`Observer<T>`] in the list with the given message.
+    /// Notify all [Observer<T>] in the list with the given message.
+    ///
     /// Only a clone of the message and not the real object will be sent.
     pub fn notify(&self, message: T) {
         self.observers.lock().unwrap().iter().for_each(|o| {
@@ -98,15 +119,6 @@ impl<T: Clone> ObserverList<T> {
                 }
             }
         })
-    }
-
-    pub fn count(&self) -> usize {
-        self.observers
-            .lock()
-            .unwrap()
-            .iter()
-            .filter(|r| r.upgrade().is_some())
-            .count()
     }
 }
 

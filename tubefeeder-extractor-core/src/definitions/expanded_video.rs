@@ -23,6 +23,11 @@ use async_trait::async_trait;
 
 use crate::{Observable, ObserverList, Video};
 
+/// A [Video] with a expanded feature set.
+///
+/// A [ExpandedVideo] implements [Observable] and will notify using [VideoEvent].
+/// You can set the playing-status of the [ExpandedVideo] using [ExpandedVideo::play]
+/// and [ExpandedVideo::stop].
 #[derive(Clone)]
 pub struct ExpandedVideo<V> {
     observers: ObserverList<VideoEvent>,
@@ -97,24 +102,32 @@ where
 }
 
 impl<V: Video> ExpandedVideo<V> {
+    /// Mark the [ExpandedVideo] as playing and notify the observers
+    /// using [VideoEvent::Play].
     pub fn play(&mut self) {
         self.playing = true;
         self.observers.notify(VideoEvent::Play);
     }
 
+    /// Mark the [ExpandedVideo] as stopped and notify the observers
+    /// using [VideoEvent::Stop].
     pub fn stop(&mut self) {
         self.playing = false;
         self.observers.notify(VideoEvent::Stop);
     }
 
+    /// Get if the video is currently playing.
     pub fn playing(&self) -> bool {
         self.playing
     }
 }
 
+/// A event thrown by [ExpandedVideo].
 #[derive(Clone)]
 pub enum VideoEvent {
+    /// The [ExpandedVideo] was played, see [ExpandedVideo::play].
     Play,
+    /// The [ExpandedVideo] was stopped, see [ExpandedVideo::stop].
     Stop,
 }
 

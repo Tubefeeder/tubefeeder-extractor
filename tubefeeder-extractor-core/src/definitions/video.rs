@@ -32,13 +32,27 @@ use {crate::mock::MockSubscription, mockall::predicate::*, mockall::*};
 pub trait Video:
     Clone + std::hash::Hash + std::cmp::Eq + std::marker::Send + std::marker::Sync
 {
+    /// The [Subscription] of type of this video.
     type Subscription: Subscription;
 
+    /// The url that can be used to play the [Video].
     fn url(&self) -> String;
+
+    /// The title of the [Video].
     fn title(&self) -> String;
+
+    /// The time of video upload.
     fn uploaded(&self) -> chrono::NaiveDateTime;
+
+    /// The subscription uploading the [Video].
     fn subscription(&self) -> Self::Subscription;
 
+    /// Save the thumbnail of the [Video] into a file at the given path.
+    ///
+    /// The image should be fetched using the given [reqwest::Client] and it should
+    /// be saved with the given width and height.
+    ///
+    /// When not overwritten it will default to create a transparent picture.
     async fn thumbnail_with_client<P: AsRef<Path> + Send>(
         &self,
         _client: &reqwest::Client,
@@ -49,6 +63,7 @@ pub trait Video:
         self.default_thumbnail(filename, width, height);
     }
 
+    /// Save the default image similar to [Video::thumbnail_with_client].
     fn default_thumbnail<P: AsRef<Path>>(&self, filename: P, width: i32, height: i32) {
         let pixbuf =
             Pixbuf::new(Colorspace::Rgb, true, 8, width, height).expect("Could not create empty");
@@ -56,6 +71,12 @@ pub trait Video:
         let _ = pixbuf.savev(filename, "png", &[]);
     }
 
+    /// Save the thumbnail of the [Video] into a file at the given path.
+    ///
+    /// The image will be fetched using [reqwest::Client::new]. It will
+    /// be saved with the given width and height.
+    ///
+    /// When not overwritten it will default to create a transparent picture.
     async fn thumbnail<P: AsRef<Path> + Send>(&self, filename: P, width: i32, height: i32) {
         self.thumbnail_with_client(&reqwest::Client::new(), filename, width, height)
             .await

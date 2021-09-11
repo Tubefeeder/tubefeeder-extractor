@@ -23,10 +23,30 @@ use std::marker::PhantomData;
 
 use async_trait::async_trait;
 
+/// A [Pipeline][crate::Pipeline]-component expanding [Video]s `V` into
+/// [ExpandedVideo]s.
 #[derive(Clone)]
-pub struct Expander<V, G> {
+pub(crate) struct Expander<V, G> {
+    /// The internal [Generator].
     generator: G,
-    video: PhantomData<V>,
+
+    /// Phantom data.
+    phantom: PhantomData<V>,
+}
+
+impl<V, G> Expander<V, G>
+where
+    G: Generator<Item = V> + std::marker::Sync + std::marker::Send,
+    <G as Generator>::Iterator: 'static,
+    V: Video,
+{
+    /// Create a new [Expander] wrapping the given [Generator].
+    pub fn new(generator: G) -> Self {
+        Expander {
+            generator,
+            phantom: PhantomData,
+        }
+    }
 }
 
 #[async_trait]
@@ -46,19 +66,5 @@ where
             Box::new(iterator.map(|v| v.into()))
                 as Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
         mapped_iterator
-    }
-}
-
-impl<V, G> Expander<V, G>
-where
-    G: Generator<Item = V> + std::marker::Sync + std::marker::Send,
-    <G as Generator>::Iterator: 'static,
-    V: Video,
-{
-    pub fn new(generator: G) -> Self {
-        Expander {
-            generator,
-            video: PhantomData,
-        }
     }
 }

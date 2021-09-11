@@ -19,6 +19,7 @@
 
 use crate::{Subscription, Video};
 
+/// A list of [Subscription]s.
 pub struct SubscriptionList<S> {
     subscriptions: Vec<S>,
 }
@@ -28,20 +29,26 @@ where
     V: Video<Subscription = S>,
     S: Subscription<Video = V>,
 {
+    /// Generate a new, empty [SubscriptionList].
     pub fn new() -> Self {
         SubscriptionList {
             subscriptions: vec![],
         }
     }
 
+    /// Add a [Subscription] to the [SubscriptionList].
+    ///
+    /// This does not currently check for duplicates.
     pub fn add(&mut self, subscription: S) {
         self.subscriptions.push(subscription);
     }
 
+    /// Remove a [Subscription] from the [SubscriptionList].
     pub fn remove(&mut self, subscription: S) {
         self.subscriptions.retain(|s| s != &subscription);
     }
 
+    /// Get a [Vec] of all [Subscription]s.
     pub fn subscriptions(&self) -> Vec<S> {
         self.subscriptions.clone()
     }

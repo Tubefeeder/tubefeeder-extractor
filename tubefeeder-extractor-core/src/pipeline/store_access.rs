@@ -23,9 +23,13 @@ use crate::{ErrorStore, Generator, Video, VideoStore};
 
 use async_trait::async_trait;
 
+/// A pipeline elemnt putting generated [Video]s `V` from the [Generator] `G` into
+/// the [VideoStore] and generating `Arc<Mutex<V>>`.
 #[derive(Clone)]
 pub(crate) struct StoreAccess<V, G> {
+    /// The [VideoStore] beeing accessed
     store: Arc<Mutex<VideoStore<V>>>,
+    /// The internal [Generator] generating the [Video]s put into the [VideoStore].
     generator: G,
 }
 
@@ -35,6 +39,7 @@ where
     G: Generator<Item = V>,
     <G as Generator>::Iterator: 'static,
 {
+    /// Create a new [StoreAccess] using the given [VideoStore] and [Generator].
     pub(crate) fn new(store: Arc<Mutex<VideoStore<V>>>, generator: G) -> Self {
         StoreAccess { store, generator }
     }

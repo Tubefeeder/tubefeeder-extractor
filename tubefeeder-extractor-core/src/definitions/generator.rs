@@ -24,10 +24,16 @@ use crate::ErrorStore;
 #[cfg(test)]
 use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 
+/// Generate a [Generator::Iterator] of [Generator::Item] asyncronously.
 #[async_trait]
 pub trait Generator {
+    /// The item being generated.
     type Item;
+
+    /// The outcoming [Iterator].
     type Iterator: Iterator<Item = Self::Item>;
+
+    /// Generate [Self::Item] asyncronously and putting all [Error][crate::Error]s into the given [ErrorStore].
     async fn generate(&self, errors: &ErrorStore) -> Self::Iterator;
 }
 
