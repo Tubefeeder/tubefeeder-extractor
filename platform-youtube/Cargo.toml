@@ -12,7 +12,7 @@ rusty_pipe = { git = "https://github.com/Tubefeeder/rusty_pipe.git", rev = "6fb1
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
-lazy_static = "^1.4"
+regex = "^1.5"
 tokio = { version = "^1.9", features = [ "macros" ] }
 quick-xml = { version = "^0.22", features = [ "serialize" ] }
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }

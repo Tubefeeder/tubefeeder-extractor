@@ -21,7 +21,7 @@ use crate::{structure::Feed, video::YTVideo};
 
 use async_trait::async_trait;
 use rusty_pipe::extractors::YTChannelExtractor;
-use tf_core::{ErrorStore, NetworkError};
+use tf_core::{Error, ErrorStore, NetworkError, ParseError, Subscription};
 
 fn feed_url() -> String {
     #[cfg(not(test))]
@@ -49,10 +49,57 @@ impl YTSubscription {
         }
     }
 
+    /// Create a new [`YTSubscription`] using the given channel id and name.
     pub fn new_with_name(id: &str, name: &str) -> Self {
         YTSubscription {
             id: id.to_owned(),
             name: Some(name.to_owned()),
+        }
+    }
+
+    /// Try to interpret the given string as a id first, if this fails try
+    /// to interpret it as a name.
+    pub async fn from_id_or_name(id_or_name: &str) -> Result<Self, Error> {
+        let extractor = YTChannelExtractor::new::<crate::Downloader>(id_or_name, None).await;
+        if extractor.is_ok() {
+            Ok(Self::new(id_or_name))
+        } else {
+            Self::from_name(id_or_name).await
+        }
+    }
+
+    /// Try to create a new [`YTSubscription`] from the given name.
+    ///
+    /// Will return `None` if no such channel exists.
+    pub async fn from_name(name: &str) -> Result<Self, Error> {
+        let url = format!("https://www.youtube.com/c/{}/featured", name);
+        let content: Result<String, Error> = async {
+            let response = reqwest::get(&url).await;
+
+            if response.is_err() {
+                return Err(NetworkError(url).into());
+            }
+
+            let parsed = response.unwrap().text().await;
+
+            if parsed.is_err() {
+                return Err(NetworkError(url).into());
+            }
+
+            Ok(parsed.unwrap())
+        }
+        .await;
+
+        if let Err(e) = content {
+            Err(e)
+        } else {
+            let regex = regex::Regex::new(r#""externalId":"([0-9a-zA-Z_\-]*)"#).unwrap();
+
+            if let Some(id) = regex.captures(&content.unwrap()) {
+                Ok(Self::new_with_name(&id[1].to_string(), name))
+            } else {
+                Err(ParseError(name.to_string()).into())
+            }
         }
     }
 
@@ -67,14 +114,26 @@ impl YTSubscription {
     }
 
     /// Try to get the channel name from the channel id.
-    pub async fn update_name(&self) -> Option<String> {
-        let extractor_res = YTChannelExtractor::new::<crate::Downloader>(&self.id, None).await;
-        if let Ok(extractor) = extractor_res {
-            if let Ok(name) = extractor.name() {
-                return Some(name);
-            }
+    pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
+        // let extractor_res = YTChannelExtractor::new::<crate::Downloader>(&self.id, None).await;
+        // if let Ok(extractor) = extractor_res {
+        //     if let Ok(name) = extractor.name() {
+        //         return Some(name);
+        //     }
+        // } else {
+        //     log::error!(
+        //         "Failed to update name due to extractor: {}",
+        //         extractor_res.err().unwrap()
+        //     );
+        // }
+        // return None;
+        let error_store = ErrorStore::new();
+        let mut videos = self.generate_with_client(&error_store, client).await;
+        if let Some(video) = videos.next() {
+            return video.subscription.name();
+        } else {
+            return None;
         }
-        return None;
     }
 }
 

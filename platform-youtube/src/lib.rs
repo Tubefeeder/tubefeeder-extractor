@@ -27,25 +27,14 @@ pub use video::YTVideo;
 use std::{collections::HashMap, str::FromStr};
 
 use async_trait::async_trait;
-use lazy_static::lazy_static;
 use rusty_pipe::ParsingError;
 
 pub(crate) struct Downloader {}
 
-lazy_static! {
-    // The client to create requests with.
-    static ref CLIENT: reqwest::Client = reqwest::Client::builder()
-        .tcp_keepalive(Some(std::time::Duration::from_secs(10)))
-        .build()
-        .unwrap();
-}
-
 #[async_trait]
 impl rusty_pipe::Downloader for Downloader {
     async fn download(url: &str) -> Result<String, ParsingError> {
-        let resp = CLIENT
-            .get(url)
-            .send()
+        let resp = reqwest::get(url)
             .await
             .map_err(|er| ParsingError::DownloadError {
                 cause: er.to_string(),
@@ -63,7 +52,7 @@ impl rusty_pipe::Downloader for Downloader {
         url: &str,
         header: HashMap<String, String>,
     ) -> Result<String, ParsingError> {
-        let res = CLIENT.get(url);
+        let res = reqwest::Client::new().get(url);
         let mut headers = reqwest::header::HeaderMap::new();
         for header in header {
             headers.insert(
