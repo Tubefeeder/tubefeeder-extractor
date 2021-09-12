@@ -22,12 +22,14 @@ use std::sync::{Arc, Mutex};
 use tf_core::{Observable, ObserverList, SubscriptionList};
 #[cfg(test)]
 use tf_test::TestSubscription;
-
 #[cfg(feature = "youtube")]
 use tf_yt::YTSubscription;
 
 use crate::AnySubscription;
 
+/// A wrapper around all the available [SubscriptionList] of the platforms.
+///
+/// This implements [Observable] and emits [SubscriptionEvent] to the [Observers][tf_core::Observer]s.
 #[derive(Clone)]
 pub struct AnySubscriptionList {
     observers: ObserverList<SubscriptionEvent>,
@@ -39,6 +41,10 @@ pub struct AnySubscriptionList {
 }
 
 impl AnySubscriptionList {
+    /// Create a new [AnySubscriptionList].
+    ///
+    /// This [AnySubscriptionList] will have no observers and the wrapped [SubscriptionList]s
+    /// will be empty.
     pub(crate) fn new() -> Self {
         AnySubscriptionList {
             observers: ObserverList::default(),
@@ -50,11 +56,13 @@ impl AnySubscriptionList {
         }
     }
 
+    /// Set the wrapped [SubscriptionList] for youtube.
     #[cfg(feature = "youtube")]
     pub(crate) fn yt_subscriptions(&mut self, sub: Arc<Mutex<SubscriptionList<YTSubscription>>>) {
         self.yt_subscriptions = sub;
     }
 
+    /// Set the wrapped [SubscriptionList] for tests.
     #[cfg(test)]
     pub(crate) fn test_subscriptions(
         &mut self,
@@ -63,6 +71,9 @@ impl AnySubscriptionList {
         self.test_subscriptions = sub;
     }
 
+    /// Add a [AnySubscription] to the [AnySubscriptionList].
+    ///
+    /// This will notify all [Observer][tf_core::Observer]s with [SubscriptionEvent::Add].
     pub fn add(&self, subscription: AnySubscription) {
         match subscription.clone() {
             #[cfg(feature = "youtube")]
@@ -73,6 +84,9 @@ impl AnySubscriptionList {
         self.observers.notify(SubscriptionEvent::Add(subscription))
     }
 
+    /// Remove a [AnySubscription] to the [AnySubscriptionList].
+    ///
+    /// This will notify all [Observer][tf_core::Observer]s with [SubscriptionEvent::Remove].
     pub fn remove(&self, subscription: AnySubscription) {
         match subscription.clone() {
             #[cfg(feature = "youtube")]
@@ -84,6 +98,7 @@ impl AnySubscriptionList {
             .notify(SubscriptionEvent::Remove(subscription))
     }
 
+    /// Iterate over all stored [AnySubscription]s.
     pub fn iter(&self) -> impl Iterator<Item = AnySubscription> {
         let mut vec = vec![];
         #[cfg(feature = "youtube")]
@@ -121,9 +136,12 @@ impl Default for AnySubscriptionList {
     }
 }
 
+/// The event sent by [AnySubscriptionList].
 #[derive(Clone, Debug)]
 pub enum SubscriptionEvent {
+    /// A [AnySubscription] was added. See [AnySubscriptionList::add].
     Add(AnySubscription),
+    /// A [AnySubscription] was removed. See [AnySubscriptionList::remove].
     Remove(AnySubscription),
 }
 

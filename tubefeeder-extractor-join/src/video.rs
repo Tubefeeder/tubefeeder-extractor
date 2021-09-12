@@ -26,6 +26,7 @@ use tf_core::{ExpandedVideo, Observable, Video};
 
 use crate::{AnySubscription, Platform};
 
+/// A [Video] coming from any [Platform].
 #[derive(Clone)]
 pub enum AnyVideo {
     #[cfg(feature = "youtube")]
@@ -35,6 +36,7 @@ pub enum AnyVideo {
 }
 
 impl AnyVideo {
+    /// The url of the [AnyVideo].
     pub fn url(&self) -> String {
         match self {
             #[cfg(feature = "youtube")]
@@ -44,6 +46,7 @@ impl AnyVideo {
         }
     }
 
+    /// The title of the [AnyVideo].
     pub fn title(&self) -> String {
         match self {
             #[cfg(feature = "youtube")]
@@ -53,6 +56,7 @@ impl AnyVideo {
         }
     }
 
+    /// The date of upload of the [AnyVideo].
     pub fn uploaded(&self) -> chrono::NaiveDateTime {
         match self {
             #[cfg(feature = "youtube")]
@@ -62,6 +66,9 @@ impl AnyVideo {
         }
     }
 
+    /// The [AnySubscription] of the [AnyVideo].
+    ///
+    /// The [Platform] of the [AnyVideo] and [AnySubscription] will always match.
     pub fn subscription(&self) -> AnySubscription {
         match self {
             #[cfg(feature = "youtube")]
@@ -71,6 +78,12 @@ impl AnyVideo {
         }
     }
 
+    /// Save the thumbnail of the [AnyVideo] into a file at the given path.
+    ///
+    /// The image should be fetched using the given [reqwest::Client] and it should
+    /// be saved with the given width and height.
+    ///
+    /// When not overwritten it will default to the default thumbnails ot the [Platform].
     pub async fn thumbnail_with_client<P: AsRef<Path> + Send>(
         &self,
         client: &reqwest::Client,
@@ -96,11 +109,16 @@ impl AnyVideo {
         }
     }
 
+    /// Save the thumbnail of the [AnyVideo] into a file at the given path.
+    ///
+    /// The image will be fetched using the default [reqwest::Client::new] and it will
+    /// be saved with the given width and height.
     pub async fn thumbnail<P: AsRef<Path> + Send>(&self, filename: P, width: i32, height: i32) {
         self.thumbnail_with_client(&reqwest::Client::new(), filename, width, height)
             .await
     }
 
+    /// Set the playing status of the [AnyVideo] to playing.
     pub fn play(&self) {
         match self {
             #[cfg(feature = "youtube")]
@@ -110,6 +128,7 @@ impl AnyVideo {
         }
     }
 
+    /// Set the playing status of the [AnyVideo] to stopped.
     pub fn stop(&self) {
         match self {
             #[cfg(feature = "youtube")]
@@ -119,6 +138,7 @@ impl AnyVideo {
         }
     }
 
+    /// Gets the playing status of the [AnyVideo].
     pub fn playing(&self) -> bool {
         match self {
             #[cfg(feature = "youtube")]
@@ -128,6 +148,7 @@ impl AnyVideo {
         }
     }
 
+    /// Get the [Platform] where the [AnyVideo] was uploaded.
     pub fn platform(&self) -> Platform {
         match self {
             #[cfg(feature = "youtube")]

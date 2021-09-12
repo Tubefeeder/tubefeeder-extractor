@@ -19,6 +19,7 @@
 
 use std::{convert::TryFrom, str::FromStr};
 
+/// A [Subscription][tf_core::Subscription] to any [Platform].
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Ord, PartialOrd)]
 pub enum AnySubscription {
     #[cfg(feature = "youtube")]
@@ -28,6 +29,7 @@ pub enum AnySubscription {
 }
 
 impl AnySubscription {
+    /// Gives the [Platform] of the [AnySubscription].
     pub fn platform(&self) -> Platform {
         match &self {
             #[cfg(feature = "youtube")]
@@ -37,6 +39,7 @@ impl AnySubscription {
         }
     }
 
+    /// Gives a optional name of the [AnySubscription].
     pub fn name(&self) -> Option<String> {
         match &self {
             #[cfg(feature = "youtube")]
@@ -114,6 +117,7 @@ impl From<tf_test::TestSubscription> for AnySubscription {
     }
 }
 
+/// The [Platform] where the [AnySubscription] is from.
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Platform {
     #[cfg(feature = "youtube")]

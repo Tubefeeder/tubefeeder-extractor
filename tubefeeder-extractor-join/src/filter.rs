@@ -26,10 +26,22 @@ use crate::{AnyVideo, Platform};
 
 use tf_filter::Filter;
 
+/// A [Filter] for filtering [AnyVideo]s.
 #[derive(Debug, Clone)]
 pub struct AnyVideoFilter {
+    /// Filter the [Platform].
+    ///
+    /// If this is `None`, the [Platform] will be ignored.
     platform: Option<Platform>,
+
+    /// Filter the [AnyVideo::title].
+    ///
+    /// If this is `None`, the [AnyVideo::title] will be ignored.
     title: Option<Regex>,
+
+    /// Filter the [AnySubscription::name][crate::AnySubscription::name].
+    ///
+    /// If this is `None`, the [AnySubscription::name][crate::AnySubscription::name] will be ignored.
     subscription: Option<Regex>,
 }
 
@@ -57,6 +69,10 @@ impl std::hash::Hash for AnyVideoFilter {
 }
 
 impl AnyVideoFilter {
+    /// Create a new [AnyVideoFilter] matching a [AnyVideo].
+    ///
+    /// The [Platform], [AnyVideo::title] and [AnySubscription::name][crate::AnySubscription::name] will be matched.
+    /// If the respecting field is `None`, this field will be ignored.
     pub fn new(
         platform: Option<Platform>,
         title: Option<Regex>,
@@ -69,10 +85,12 @@ impl AnyVideoFilter {
         }
     }
 
+    /// Give the title-regex as a String if the title-regex is set.
     pub fn title_str(&self) -> Option<String> {
         self.title.clone().map(|r| r.to_string())
     }
 
+    /// Give the subscription-regex as a String if the subscription-regex is set.
     pub fn subscription_str(&self) -> Option<String> {
         self.subscription.clone().map(|r| r.to_string())
     }
@@ -161,6 +179,7 @@ impl From<AnyVideoFilter> for Vec<String> {
     }
 }
 
+/// Maps a empty String to `None`, otherwise to `Some` of the given String.
 fn map_empty_to_none<S: AsRef<str>>(st: S) -> Option<String> {
     let string = st.as_ref().to_string();
     if string.is_empty() {

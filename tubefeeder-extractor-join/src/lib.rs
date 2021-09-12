@@ -17,6 +17,24 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+//! Joining multiple platforms into one.
+//!
+//! ### Capabilities
+//!
+//! - Join multiple platforms together using [Joiner].
+//! - Filter out videos using [AnyVideoFilter].
+//! - Generalization of [Video][tf_core::Video] and [Subscription][tf_core::Subscription] using
+//! [AnyVideo] and [AnySubscription].
+//! - Generalization of [SubscriptionList][tf_core::SubscriptionList] using [AnySubscriptionList].
+//!
+//!
+//! ### Features
+//!
+//! The feature enable and disable specific platforms. All features are activated
+//! by default. The possible features currently are:
+//!
+//! - `youtube`
+
 mod filter;
 mod joiner;
 mod subscription;

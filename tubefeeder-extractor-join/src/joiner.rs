@@ -28,12 +28,17 @@ use tf_filter::{Filter, FilterGroup};
 
 use async_trait::async_trait;
 
-use crate::{AnySubscription, AnySubscriptionList, AnyVideo, AnyVideoFilter};
+use crate::{AnySubscriptionList, AnyVideo, AnyVideoFilter};
 
+/// Join multiple platforms together into one [Generator].
+///
+/// This will handle the generation and filtering of videos.
 #[derive(Clone)]
 pub struct Joiner {
+    /// The [AnySubscriptionList] used to generate the [AnyVideo]s.
     subscription_list: AnySubscriptionList,
 
+    /// The [FilterGroup] used to filter out [AnyVideo]s.
     filters: Arc<Mutex<FilterGroup<AnyVideoFilter>>>,
     #[cfg(feature = "youtube")]
     yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,
@@ -42,6 +47,7 @@ pub struct Joiner {
 }
 
 impl Joiner {
+    /// Create a new [Joiner] with no [AnySubscription][crate::AnySubscription]s and no [Filter][tf_filter::Filter]s.
     pub fn new() -> Self {
         #[cfg(feature = "youtube")]
         let yt_pipeline = Pipeline::new();
@@ -64,28 +70,17 @@ impl Joiner {
         }
     }
 
+    /// Get the [AnySubscriptionList] used to generate the [AnyVideo]s.
+    ///
+    /// When modifying this list, it will also change the [AnySubscription][crate::AnySubscription]s
+    /// of this [Joiner].
     pub fn subscription_list(&self) -> AnySubscriptionList {
         self.subscription_list.clone()
     }
 
+    /// Get the [FilterGroup] used to filter out [AnyVideo]s.
     pub fn filters(&self) -> Arc<Mutex<FilterGroup<AnyVideoFilter>>> {
         self.filters.clone()
-    }
-
-    pub fn subscribe(&self, subscription: AnySubscription) {
-        match subscription {
-            #[cfg(feature = "youtube")]
-            AnySubscription::Youtube(s) => {
-                self.yt_pipeline.subscription_list().lock().unwrap().add(s)
-            }
-            #[cfg(test)]
-            AnySubscription::Test(s) => self
-                .test_pipeline
-                .subscription_list()
-                .lock()
-                .unwrap()
-                .add(s),
-        }
     }
 }
 

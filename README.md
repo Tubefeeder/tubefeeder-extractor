@@ -17,4 +17,5 @@ If you would like to support this by writing a new backend, please contact me in
 
 ## Documentation
 
-Documentation is currently very bare-bone and will follow soon-ish.
+Most of the source code is now has basic documentatation.
+The documentation can be generated with `cargo doc --open``.
