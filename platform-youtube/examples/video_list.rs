@@ -17,7 +17,7 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-extern crate tubefeeder_extractor_youtube as tf_yt;
+extern crate platform_youtube as tf_yt;
 
 use tf_core::ErrorStore;
 use tf_core::{Generator, Pipeline, Video};

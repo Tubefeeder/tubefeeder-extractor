@@ -9,7 +9,7 @@ edition = "2018"
 tf_observer = { package = "observer", path = "../observer" }
 tf_core = { package = "tubefeeder-extractor-core", path = "../tubefeeder-extractor-core" }
 tf_filter = { package = "tubefeeder-extractor-filter", path = "../tubefeeder-extractor-filter"}
-tf_yt = { package = "tubefeeder-extractor-youtube", path = "../tubefeeder-extractor-youtube", optional = true}
+tf_yt = { package = "platform-youtube", path = "../platform-youtube", optional = true}
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
@@ -23,7 +23,7 @@ log = "^0.4"
 
 [dev-dependencies]
 env_logger =  "^0.9"
-tf_test = { package = "tubefeeder-extractor-test", path = "../tubefeeder-extractor-test"}
+tf_test = { package = "platform-test", path = "../platform-test"}
 
 [features]
 default = ["youtube"]

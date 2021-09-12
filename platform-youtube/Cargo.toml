@@ -1,5 +1,5 @@
 [package]
-name = "tubefeeder-extractor-youtube"
+name = "platform-youtube"
 version = "0.0.0"
 edition = "2018"
 
