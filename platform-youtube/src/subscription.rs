@@ -20,6 +20,7 @@
 use crate::{structure::Feed, video::YTVideo};
 
 use async_trait::async_trait;
+use rusty_pipe::extractors::YTChannelExtractor;
 use tf_core::{ErrorStore, NetworkError};
 
 fn feed_url() -> String {
@@ -32,8 +33,7 @@ fn feed_url() -> String {
 }
 
 /// A [`YTSubscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
-// TODO: Self-implement PartialOrd, Ord
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct YTSubscription {
     /// The channel id.
     id: String,
@@ -64,6 +64,17 @@ impl YTSubscription {
     /// Get the name of the [`YTSubscription`].
     pub fn name(&self) -> Option<String> {
         self.name.clone()
+    }
+
+    /// Try to get the channel name from the channel id.
+    pub async fn update_name(&self) -> Option<String> {
+        let extractor_res = YTChannelExtractor::new::<crate::Downloader>(&self.id, None).await;
+        if let Ok(extractor) = extractor_res {
+            if let Ok(name) = extractor.name() {
+                return Some(name);
+            }
+        }
+        return None;
     }
 }
 

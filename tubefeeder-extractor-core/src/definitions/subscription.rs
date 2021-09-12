@@ -28,14 +28,7 @@ use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 /// [Video]s asyncronously.
 #[async_trait]
 pub trait Subscription:
-    Clone
-    + std::marker::Send
-    + std::marker::Sync
-    + std::fmt::Display
-    + PartialEq
-    + Eq
-    + PartialOrd
-    + Ord
+    Clone + std::marker::Send + std::marker::Sync + std::fmt::Display + PartialEq + Eq + std::hash::Hash
 {
     /// The type of video that will be generated.
     type Video: crate::Video;
@@ -108,11 +101,21 @@ mock! {
         }
     }
 
+
     #[async_trait]
     impl Subscription for Subscription {
         type Video = MockVideo;
         type Iterator = std::vec::IntoIter<MockVideo>;
         async fn generate_with_client(&self, errors: &ErrorStore, client: &reqwest::Client) -> <Self as Subscription>::Iterator;
         async fn generate(&self, errors: &ErrorStore) -> <Self as Subscription>::Iterator;
+    }
+}
+
+#[cfg(test)]
+impl std::hash::Hash for MockSubscription {
+    fn hash<H>(&self, _state: &mut H)
+    where
+        H: std::hash::Hasher,
+    {
     }
 }

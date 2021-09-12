@@ -20,7 +20,7 @@
 use std::{convert::TryFrom, str::FromStr};
 
 /// A [Subscription][tf_core::Subscription] to any [Platform].
-#[derive(Clone, PartialEq, Eq, Hash, Debug, Ord, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum AnySubscription {
     #[cfg(feature = "youtube")]
     Youtube(tf_yt::YTSubscription),
