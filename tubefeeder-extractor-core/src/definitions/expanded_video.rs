@@ -21,7 +21,8 @@ use std::{hash::Hash, path::Path};
 
 use async_trait::async_trait;
 
-use crate::{Observable, ObserverList, Video};
+use crate::Video;
+use tf_observer::{Observable, Observer, ObserverList};
 
 /// A [Video] with a expanded feature set.
 ///
@@ -134,14 +135,14 @@ pub enum VideoEvent {
 impl<V: Video> Observable<VideoEvent> for ExpandedVideo<V> {
     fn attach(
         &mut self,
-        observer: std::sync::Weak<std::sync::Mutex<Box<dyn crate::Observer<VideoEvent> + Send>>>,
+        observer: std::sync::Weak<std::sync::Mutex<Box<dyn Observer<VideoEvent> + Send>>>,
     ) {
         self.observers.attach(observer)
     }
 
     fn detach(
         &mut self,
-        observer: std::sync::Weak<std::sync::Mutex<Box<dyn crate::Observer<VideoEvent> + Send>>>,
+        observer: std::sync::Weak<std::sync::Mutex<Box<dyn Observer<VideoEvent> + Send>>>,
     ) {
         self.observers.detach(observer)
     }

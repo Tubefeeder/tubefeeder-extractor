@@ -26,7 +26,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{Observable, ObserverList};
+use tf_observer::{Observable, Observer, ObserverList};
 
 /// The collection of all errors that can occur.
 #[derive(Debug, Clone)]
@@ -185,17 +185,11 @@ pub enum ErrorEvent {
 }
 
 impl Observable<ErrorEvent> for ErrorStore {
-    fn attach(
-        &mut self,
-        observer: std::sync::Weak<Mutex<Box<dyn crate::Observer<ErrorEvent> + Send>>>,
-    ) {
+    fn attach(&mut self, observer: std::sync::Weak<Mutex<Box<dyn Observer<ErrorEvent> + Send>>>) {
         self.observers.attach(observer);
     }
 
-    fn detach(
-        &mut self,
-        observer: std::sync::Weak<Mutex<Box<dyn crate::Observer<ErrorEvent> + Send>>>,
-    ) {
+    fn detach(&mut self, observer: std::sync::Weak<Mutex<Box<dyn Observer<ErrorEvent> + Send>>>) {
         self.observers.detach(observer);
     }
 }

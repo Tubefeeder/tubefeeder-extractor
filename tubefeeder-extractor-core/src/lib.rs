@@ -27,17 +27,10 @@
 //! - [Subscription]
 //! - [SubscriptionList]
 //!
-//! The Observer-pattern used for many of the structs:
-//!
-//! - [Observer]
-//! - [Observable]
-//! - [ObserverList]
-//!
 //! And a [Pipeline] for merging together videos from one platform.
 
 mod definitions;
 mod error;
-mod observer;
 mod pipeline;
 
 pub use definitions::expanded_video::ExpandedVideo;
@@ -46,7 +39,6 @@ pub use definitions::generator::Generator;
 pub use definitions::subscription::Subscription;
 pub use definitions::video::Video;
 pub use error::{Error, ErrorEvent, ErrorStore, ErrorSummary, NetworkError, ParseError};
-pub use observer::{Observable, Observer, ObserverList};
 pub use pipeline::pipe::Pipeline;
 pub use pipeline::subscription_list::SubscriptionList;
 

@@ -4,5 +4,6 @@ members = [
     "tubefeeder-extractor-core",
     "tubefeeder-extractor-youtube",
     "tubefeeder-extractor-test",
-    "tubefeeder-extractor-filter"
+    "tubefeeder-extractor-filter",
+    "observer"
 ]

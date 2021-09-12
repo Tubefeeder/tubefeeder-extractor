@@ -22,7 +22,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use tf_core::{ExpandedVideo, Observable, Video};
+use tf_core::{ExpandedVideo, Video};
+use tf_observer::{Observable, Observer};
 
 use crate::{AnySubscription, Platform};
 
@@ -162,7 +163,7 @@ impl AnyVideo {
 impl Observable<tf_core::VideoEvent> for AnyVideo {
     fn attach(
         &mut self,
-        observer: std::sync::Weak<Mutex<Box<dyn tf_core::Observer<tf_core::VideoEvent> + Send>>>,
+        observer: std::sync::Weak<Mutex<Box<dyn Observer<tf_core::VideoEvent> + Send>>>,
     ) {
         match self {
             #[cfg(feature = "youtube")]
@@ -174,7 +175,7 @@ impl Observable<tf_core::VideoEvent> for AnyVideo {
 
     fn detach(
         &mut self,
-        observer: std::sync::Weak<Mutex<Box<dyn tf_core::Observer<tf_core::VideoEvent> + Send>>>,
+        observer: std::sync::Weak<Mutex<Box<dyn Observer<tf_core::VideoEvent> + Send>>>,
     ) {
         match self {
             #[cfg(feature = "youtube")]

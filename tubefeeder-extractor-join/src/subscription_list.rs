@@ -19,7 +19,8 @@
 
 use std::sync::{Arc, Mutex};
 
-use tf_core::{Observable, ObserverList, SubscriptionList};
+use tf_core::SubscriptionList;
+use tf_observer::{Observable, Observer, ObserverList};
 #[cfg(test)]
 use tf_test::TestSubscription;
 #[cfg(feature = "youtube")]
@@ -29,7 +30,7 @@ use crate::AnySubscription;
 
 /// A wrapper around all the available [SubscriptionList] of the platforms.
 ///
-/// This implements [Observable] and emits [SubscriptionEvent] to the [Observers][tf_core::Observer]s.
+/// This implements [Observable] and emits [SubscriptionEvent] to the [Observer]s.
 #[derive(Clone)]
 pub struct AnySubscriptionList {
     observers: ObserverList<SubscriptionEvent>,
@@ -73,7 +74,7 @@ impl AnySubscriptionList {
 
     /// Add a [AnySubscription] to the [AnySubscriptionList].
     ///
-    /// This will notify all [Observer][tf_core::Observer]s with [SubscriptionEvent::Add].
+    /// This will notify all [Observer]s with [SubscriptionEvent::Add].
     pub fn add(&self, subscription: AnySubscription) {
         match subscription.clone() {
             #[cfg(feature = "youtube")]
@@ -86,7 +87,7 @@ impl AnySubscriptionList {
 
     /// Remove a [AnySubscription] to the [AnySubscriptionList].
     ///
-    /// This will notify all [Observer][tf_core::Observer]s with [SubscriptionEvent::Remove].
+    /// This will notify all [Observer]s with [SubscriptionEvent::Remove].
     pub fn remove(&self, subscription: AnySubscription) {
         match subscription.clone() {
             #[cfg(feature = "youtube")]
@@ -148,14 +149,14 @@ pub enum SubscriptionEvent {
 impl Observable<SubscriptionEvent> for AnySubscriptionList {
     fn attach(
         &mut self,
-        observer: std::sync::Weak<Mutex<Box<dyn tf_core::Observer<SubscriptionEvent> + Send>>>,
+        observer: std::sync::Weak<Mutex<Box<dyn Observer<SubscriptionEvent> + Send>>>,
     ) {
         self.observers.attach(observer)
     }
 
     fn detach(
         &mut self,
-        observer: std::sync::Weak<Mutex<Box<dyn tf_core::Observer<SubscriptionEvent> + Send>>>,
+        observer: std::sync::Weak<Mutex<Box<dyn Observer<SubscriptionEvent> + Send>>>,
     ) {
         self.observers.detach(observer)
     }

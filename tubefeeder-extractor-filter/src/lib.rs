@@ -22,7 +22,7 @@
 
 use std::sync::{Mutex, Weak};
 
-use tf_core::{Observable, Observer, ObserverList};
+use tf_observer::{Observable, Observer, ObserverList};
 
 /// A [Filter] that matches on [Filter::Item].
 pub trait Filter {

@@ -6,6 +6,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tf_observer = { package = "observer", path = "../observer" }
 tf_core = { package = "tubefeeder-extractor-core", path = "../tubefeeder-extractor-core" }
 tf_filter = { package = "tubefeeder-extractor-filter", path = "../tubefeeder-extractor-filter"}
 tf_yt = { package = "tubefeeder-extractor-youtube", path = "../tubefeeder-extractor-youtube", optional = true}
