@@ -17,7 +17,7 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::{ErrorStore, Generator};
+use crate::{ErrorStore, Generator, GeneratorWithClient};
 use crate::{Subscription, SubscriptionList, Video};
 
 use std::sync::{Arc, Mutex};
@@ -37,8 +37,9 @@ pub(crate) struct Merger<S, V> {
 
 impl<S, V> Merger<S, V>
 where
-    S: Subscription<Video = V>,
+    S: Subscription<Video = V> + GeneratorWithClient<Item = V>,
     V: Video<Subscription = S>,
+    <S as GeneratorWithClient>::Iterator: 'static + std::marker::Send,
 {
     /// Create a new [Merger] using the given [SubscriptionList].
     pub(crate) fn new(subscriptions: Arc<Mutex<SubscriptionList<S>>>) -> Self {
@@ -52,9 +53,9 @@ where
 #[async_trait]
 impl<S, V> Generator for Merger<S, V>
 where
-    S: 'static + Subscription<Video = V>,
+    S: 'static + Subscription<Video = V> + GeneratorWithClient<Item = V>,
     V: Video<Subscription = S>,
-    <S as Subscription>::Iterator: 'static + std::marker::Send,
+    <S as GeneratorWithClient>::Iterator: 'static + std::marker::Send,
 {
     type Item = V;
 
@@ -89,11 +90,9 @@ where
 
 #[cfg(test)]
 mod test {
-
     use super::*;
 
-    use crate::mock::MockSubscription;
-    use crate::mock::MockVideo;
+    use crate::mock::{MockSubscription, MockVideo};
 
     use chrono::NaiveDate;
     use chrono::NaiveDateTime;

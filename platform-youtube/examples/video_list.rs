@@ -19,8 +19,7 @@
 
 extern crate platform_youtube as tf_yt;
 
-use tf_core::ErrorStore;
-use tf_core::{Generator, Pipeline, Video};
+use tf_core::{ErrorStore, Generator, Pipeline, Subscription, Video};
 use tf_yt::YTSubscription;
 use tf_yt::YTVideo;
 

@@ -21,7 +21,7 @@ use crate::{structure::Feed, video::YTVideo};
 
 use async_trait::async_trait;
 use rusty_pipe::extractors::YTChannelExtractor;
-use tf_core::{Error, ErrorStore, NetworkError, ParseError, Subscription};
+use tf_core::{Error, ErrorStore, GeneratorWithClient, NetworkError, ParseError, Subscription};
 
 fn feed_url() -> String {
     #[cfg(not(test))]
@@ -108,25 +108,8 @@ impl YTSubscription {
         self.id.clone()
     }
 
-    /// Get the name of the [`YTSubscription`].
-    pub fn name(&self) -> Option<String> {
-        self.name.clone()
-    }
-
     /// Try to get the channel name from the channel id.
     pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
-        // let extractor_res = YTChannelExtractor::new::<crate::Downloader>(&self.id, None).await;
-        // if let Ok(extractor) = extractor_res {
-        //     if let Ok(name) = extractor.name() {
-        //         return Some(name);
-        //     }
-        // } else {
-        //     log::error!(
-        //         "Failed to update name due to extractor: {}",
-        //         extractor_res.err().unwrap()
-        //     );
-        // }
-        // return None;
         let error_store = ErrorStore::new();
         let mut videos = self.generate_with_client(&error_store, client).await;
         if let Some(video) = videos.next() {
@@ -137,6 +120,15 @@ impl YTSubscription {
     }
 }
 
+impl Subscription for YTSubscription {
+    type Video = YTVideo;
+
+    /// Get the name of the [`YTSubscription`].
+    fn name(&self) -> Option<String> {
+        self.name.clone()
+    }
+}
+
 impl std::fmt::Display for YTSubscription {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name().unwrap_or_else(|| self.id()))
@@ -144,9 +136,9 @@ impl std::fmt::Display for YTSubscription {
 }
 
 #[async_trait]
-impl tf_core::Subscription for YTSubscription {
-    type Video = YTVideo;
-    type Iterator = std::vec::IntoIter<Self::Video>;
+impl GeneratorWithClient for YTSubscription {
+    type Item = YTVideo;
+    type Iterator = std::vec::IntoIter<Self::Item>;
     async fn generate_with_client(
         &self,
         errors: &ErrorStore,
@@ -196,7 +188,7 @@ impl tf_core::Subscription for YTSubscription {
 mod test {
     use super::*;
     use mockito::{mock, Matcher};
-    use tf_core::Subscription;
+    use tf_core::Generator;
 
     fn expected_videos() -> Vec<YTVideo> {
         let subscription = YTSubscription::new_with_name("ThisIsAChannelId", "ChannelName");

@@ -37,14 +37,75 @@ pub trait Generator {
     async fn generate(&self, errors: &ErrorStore) -> Self::Iterator;
 }
 
+/// Generate a [Generator::Iterator] of [Generator::Item] given a [reqwest::Client] asyncronously.
+#[async_trait]
+pub trait GeneratorWithClient {
+    /// The item being generated.
+    type Item;
+
+    /// The outcoming [Iterator].
+    type Iterator: Iterator<Item = Self::Item>;
+
+    /// Generate [Self::Item] asyncronously and putting all [Error][crate::Error]s into the given [ErrorStore].
+    async fn generate_with_client(
+        &self,
+        errors: &ErrorStore,
+        client: &reqwest::Client,
+    ) -> Self::Iterator;
+}
+
+#[async_trait]
+impl<T> Generator for T
+where
+    T: GeneratorWithClient + std::marker::Sync,
+{
+    type Item = <T as GeneratorWithClient>::Item;
+
+    type Iterator = <T as GeneratorWithClient>::Iterator;
+
+    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
+        self.generate_with_client(errors, &reqwest::Client::new())
+            .await
+    }
+}
+
 #[cfg(test)]
 mock! {
     pub(crate) Generator { }
+
+    impl std::fmt::Display for Generator {
+        fn fmt<'a>(&self, _fmt: &mut std::fmt::Formatter<'a>) -> Result<(), std::fmt::Error>;
+    }
+
+    impl Clone for Generator {
+        fn clone(&self) -> Self;
+    }
+
+    impl PartialEq<MockGenerator> for Generator {
+        fn eq(&self, other: &MockGenerator) -> bool;
+    }
+
+    impl Eq for Generator {
+    }
 
     #[async_trait]
     impl Generator for Generator {
         type Item = MockVideo;
         type Iterator = std::vec::IntoIter<MockVideo>;
         async fn generate(&self, errors: &ErrorStore) -> <Self as Generator>::Iterator;
+    }
+
+    impl crate::Subscription for Generator {
+        type Video = MockVideo;
+        fn name(&self) -> Option<String>;
+    }
+}
+
+#[cfg(test)]
+impl std::hash::Hash for MockGenerator {
+    fn hash<H>(&self, _fmt: &mut H)
+    where
+        H: std::hash::Hasher,
+    {
     }
 }

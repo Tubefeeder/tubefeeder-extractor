@@ -17,7 +17,7 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use tf_core::{ErrorStore, Subscription, Video};
+use tf_core::{ErrorStore, GeneratorWithClient, Subscription, Video};
 
 use async_trait::async_trait;
 
@@ -70,8 +70,8 @@ impl std::fmt::Display for TestSubscription {
 }
 
 #[async_trait]
-impl Subscription for TestSubscription {
-    type Video = TestVideo;
+impl GeneratorWithClient for TestSubscription {
+    type Item = TestVideo;
     type Iterator = std::vec::IntoIter<TestVideo>;
     async fn generate_with_client(&self, _e: &ErrorStore, _c: &reqwest::Client) -> Self::Iterator {
         let video1 = TestVideo {
@@ -90,21 +90,26 @@ impl Subscription for TestSubscription {
     }
 }
 
+impl Subscription for TestSubscription {
+    type Video = TestVideo;
+
+    fn name(&self) -> Option<String> {
+        Some(self.name.clone())
+    }
+}
+
 impl TestSubscription {
     pub fn new(name: &str) -> Self {
         TestSubscription {
             name: name.to_owned(),
         }
     }
-
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use tf_core::Generator;
 
     #[tokio::test]
     async fn subscription() {

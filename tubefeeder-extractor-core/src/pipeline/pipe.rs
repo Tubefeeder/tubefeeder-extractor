@@ -18,8 +18,8 @@
  */
 
 use crate::{
-    ErrorStore, ExpandedVideo, Expander, Generator, Merger, StoreAccess, Subscription,
-    SubscriptionList, Video, VideoStore,
+    ErrorStore, ExpandedVideo, Expander, Generator, GeneratorWithClient, Merger, StoreAccess,
+    Subscription, SubscriptionList, Video, VideoStore,
 };
 
 use std::sync::{Arc, Mutex};
@@ -40,9 +40,9 @@ pub struct Pipeline<S, V> {
 
 impl<S, V> Pipeline<S, V>
 where
-    S: 'static + Subscription<Video = V>,
+    S: 'static + Subscription<Video = V> + GeneratorWithClient<Item = V> + Generator<Item = V>,
     V: 'static + Video<Subscription = S>,
-    <S as Subscription>::Iterator: std::marker::Send,
+    <S as GeneratorWithClient>::Iterator: std::marker::Send,
 {
     /// Create a new [Pipeline] with no [Subscription]s.
     pub fn new() -> Self {
@@ -73,9 +73,9 @@ where
 #[async_trait]
 impl<S, V> Generator for Pipeline<S, V>
 where
-    S: 'static + Subscription<Video = V>,
+    S: 'static + Subscription<Video = V> + GeneratorWithClient<Item = V> + Generator<Item = V>,
     V: 'static + Video<Subscription = S>,
-    <S as Subscription>::Iterator: std::marker::Send,
+    <S as GeneratorWithClient>::Iterator: std::marker::Send,
 {
     type Item = Arc<Mutex<ExpandedVideo<V>>>;
 
@@ -88,9 +88,9 @@ where
 
 impl<S, V> Default for Pipeline<S, V>
 where
-    S: 'static + Subscription<Video = V>,
+    S: 'static + Subscription<Video = V> + GeneratorWithClient<Item = V> + Generator<Item = V>,
     V: 'static + Video<Subscription = S>,
-    <S as Subscription>::Iterator: std::marker::Send,
+    <S as GeneratorWithClient>::Iterator: std::marker::Send,
 {
     fn default() -> Self {
         Pipeline::new()

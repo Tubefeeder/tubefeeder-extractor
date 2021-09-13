@@ -19,6 +19,8 @@
 
 use std::{convert::TryFrom, str::FromStr};
 
+use tf_core::Subscription;
+
 /// A [Subscription][tf_core::Subscription] to any [Platform].
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum AnySubscription {
@@ -38,14 +40,16 @@ impl AnySubscription {
             AnySubscription::Test(_) => Platform::Test,
         }
     }
+}
 
-    /// Gives a optional name of the [AnySubscription].
-    pub fn name(&self) -> Option<String> {
+impl Subscription for AnySubscription {
+    type Video = crate::AnyVideo;
+    fn name(&self) -> Option<String> {
         match &self {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(s) => s.name(),
             #[cfg(test)]
-            AnySubscription::Test(s) => Some(s.name()),
+            AnySubscription::Test(s) => s.name(),
         }
     }
 }
@@ -96,7 +100,7 @@ impl From<AnySubscription> for Vec<String> {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(s) => result.push(s.id()),
             #[cfg(test)]
-            AnySubscription::Test(s) => result.push(s.name()),
+            AnySubscription::Test(s) => result.push(s.name().unwrap()),
         }
 
         return result;

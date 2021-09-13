@@ -19,7 +19,7 @@
 
 extern crate tubefeeder_extractor_join as tf_join;
 
-use tf_core::{ErrorStore, Generator};
+use tf_core::{ErrorStore, Generator, Video};
 use tf_join::{AnySubscription, AnyVideo, Joiner};
 
 #[cfg(test)]

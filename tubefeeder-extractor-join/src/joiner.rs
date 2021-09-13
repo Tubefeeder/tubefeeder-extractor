@@ -23,7 +23,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use tf_core::{ErrorStore, Generator, Pipeline};
+use tf_core::{ErrorStore, Generator, Pipeline, Video};
 use tf_filter::{Filter, FilterGroup};
 
 use async_trait::async_trait;

@@ -22,6 +22,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use async_trait::async_trait;
+
 use tf_core::{ExpandedVideo, Video};
 use tf_observer::{Observable, Observer};
 
@@ -36,9 +38,39 @@ pub enum AnyVideo {
     Test(Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>),
 }
 
-impl AnyVideo {
-    /// The url of the [AnyVideo].
-    pub fn url(&self) -> String {
+impl std::hash::Hash for AnyVideo {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(v) => v.lock().unwrap().hash(state),
+            #[cfg(test)]
+            AnyVideo::Test(v) => v.lock().unwrap().hash(state),
+        }
+    }
+}
+
+impl std::cmp::PartialEq for AnyVideo {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            #[cfg(feature = "youtube")]
+            (AnyVideo::Youtube(v1), AnyVideo::Youtube(v2)) => {
+                v1.lock().unwrap().eq(&v2.lock().unwrap())
+            }
+            #[cfg(test)]
+            (AnyVideo::Test(v1), AnyVideo::Test(v2)) => v1.lock().unwrap().eq(&v2.lock().unwrap()),
+            #[allow(unreachable_patterns)]
+            _ => false,
+        }
+    }
+}
+
+impl std::cmp::Eq for AnyVideo {}
+
+#[async_trait]
+impl Video for AnyVideo {
+    type Subscription = AnySubscription;
+
+    fn url(&self) -> String {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().url(),
@@ -47,8 +79,7 @@ impl AnyVideo {
         }
     }
 
-    /// The title of the [AnyVideo].
-    pub fn title(&self) -> String {
+    fn title(&self) -> String {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().title(),
@@ -57,8 +88,7 @@ impl AnyVideo {
         }
     }
 
-    /// The date of upload of the [AnyVideo].
-    pub fn uploaded(&self) -> chrono::NaiveDateTime {
+    fn uploaded(&self) -> chrono::NaiveDateTime {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().uploaded(),
@@ -67,10 +97,7 @@ impl AnyVideo {
         }
     }
 
-    /// The [AnySubscription] of the [AnyVideo].
-    ///
-    /// The [Platform] of the [AnyVideo] and [AnySubscription] will always match.
-    pub fn subscription(&self) -> AnySubscription {
+    fn subscription(&self) -> AnySubscription {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().subscription().into(),
@@ -79,13 +106,7 @@ impl AnyVideo {
         }
     }
 
-    /// Save the thumbnail of the [AnyVideo] into a file at the given path.
-    ///
-    /// The image should be fetched using the given [reqwest::Client] and it should
-    /// be saved with the given width and height.
-    ///
-    /// When not overwritten it will default to the default thumbnails ot the [Platform].
-    pub async fn thumbnail_with_client<P: AsRef<Path> + Send>(
+    async fn thumbnail_with_client<P: AsRef<Path> + Send>(
         &self,
         client: &reqwest::Client,
         filename: P,
@@ -95,30 +116,21 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => {
-                yt.lock()
-                    .unwrap()
-                    .thumbnail_with_client(client, filename, width, height)
+                let v = yt.lock().unwrap().clone();
+                v.thumbnail_with_client(client, filename, width, height)
                     .await
             }
             #[cfg(test)]
             AnyVideo::Test(test) => {
-                test.lock()
-                    .unwrap()
-                    .thumbnail_with_client(client, filename, width, height)
+                let v = test.lock().unwrap().clone();
+                v.thumbnail_with_client(client, filename, width, height)
                     .await
             }
         }
     }
+}
 
-    /// Save the thumbnail of the [AnyVideo] into a file at the given path.
-    ///
-    /// The image will be fetched using the default [reqwest::Client::new] and it will
-    /// be saved with the given width and height.
-    pub async fn thumbnail<P: AsRef<Path> + Send>(&self, filename: P, width: i32, height: i32) {
-        self.thumbnail_with_client(&reqwest::Client::new(), filename, width, height)
-            .await
-    }
-
+impl AnyVideo {
     /// Set the playing status of the [AnyVideo] to playing.
     pub fn play(&self) {
         match self {

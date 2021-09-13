@@ -19,7 +19,7 @@
 
 use async_trait::async_trait;
 
-use crate::{ErrorStore, Video};
+use crate::Video;
 
 #[cfg(test)]
 use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
@@ -30,41 +30,9 @@ use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 pub trait Subscription:
     Clone + std::marker::Send + std::marker::Sync + std::fmt::Display + PartialEq + Eq + std::hash::Hash
 {
-    /// The type of video that will be generated.
-    type Video: crate::Video;
+    type Video: Video;
 
-    /// The type of iterator that will be returned.
-    type Iterator: Iterator<Item = Self::Video>;
-
-    /// Generate the [Video]s asyncronously with the default [reqwest::Client::new].
-    /// All [Error][crate::Error]s should be put into the given [ErrorStore].
-    async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
-        self.generate_with_client(errors, &reqwest::Client::new())
-            .await
-    }
-
-    /// Generate the [Video]s asyncronously with the given [reqwest::Client].
-    /// All [Error][crate::Error]s should be put into the given [ErrorStore].
-    async fn generate_with_client(
-        &self,
-        errors: &ErrorStore,
-        client: &reqwest::Client,
-    ) -> Self::Iterator;
-}
-
-#[async_trait]
-impl<S, V> super::generator::Generator for S
-where
-    S: Subscription<Video = V> + std::marker::Sync + std::marker::Send,
-    V: Video<Subscription = S>,
-{
-    type Item = V;
-
-    type Iterator = <S as Subscription>::Iterator;
-
-    async fn generate(&self, errors: &ErrorStore) -> <S as Subscription>::Iterator {
-        self.generate(errors).await
-    }
+    fn name(&self) -> Option<String>;
 }
 
 #[cfg(test)]
@@ -101,13 +69,16 @@ mock! {
         }
     }
 
-
-    #[async_trait]
     impl Subscription for Subscription {
         type Video = MockVideo;
+        fn name(&self) -> Option<String>;
+    }
+
+    #[async_trait]
+    impl crate::GeneratorWithClient for Subscription {
+        type Item = MockVideo;
         type Iterator = std::vec::IntoIter<MockVideo>;
-        async fn generate_with_client(&self, errors: &ErrorStore, client: &reqwest::Client) -> <Self as Subscription>::Iterator;
-        async fn generate(&self, errors: &ErrorStore) -> <Self as Subscription>::Iterator;
+        async fn generate_with_client(&self, errors: &crate::ErrorStore, client: &reqwest::Client) -> <Self as crate::GeneratorWithClient>::Iterator;
     }
 }
 

@@ -24,6 +24,7 @@ use regex::Regex;
 
 use crate::{AnyVideo, Platform};
 
+use tf_core::{Subscription, Video};
 use tf_filter::Filter;
 
 /// A [Filter] for filtering [AnyVideo]s.
