@@ -123,11 +123,11 @@ impl Filter for AnyVideoFilter {
     }
 }
 
-impl TryFrom<&[&str]> for AnyVideoFilter {
+impl TryFrom<Vec<String>> for AnyVideoFilter {
     // TODO: Error handling
     type Error = ();
 
-    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
+    fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
         let platform_opt = value.get(0);
         let title_opt = value.get(1);
         let subscription_opt = value.get(2);
@@ -331,7 +331,7 @@ mod test {
 
         assert_eq!(
             Ok(filter),
-            vec!["test", "itl", "ubscr"].as_slice().try_into()
+            vec!["test".to_string(), "itl".to_string(), "ubscr".to_string()].try_into()
         );
     }
 
@@ -339,11 +339,14 @@ mod test {
     fn filter_conversion_title_back() {
         let filter = AnyVideoFilter::new(None, Some(Regex::new("itl").unwrap()), None);
 
-        assert_eq!(Ok(filter), vec!["", "itl", ""].as_slice().try_into());
+        assert_eq!(
+            Ok(filter),
+            vec!["".to_string(), "itl".to_string(), "".to_string()].try_into()
+        );
     }
 
     #[test]
     fn filter_conversion_back_fail() {
-        assert!(AnyVideoFilter::try_from(vec!["", "itl"].as_slice()).is_err());
+        assert!(AnyVideoFilter::try_from(vec!["".to_string(), "itl".to_string()]).is_err());
     }
 }

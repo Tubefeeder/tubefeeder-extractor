@@ -212,12 +212,12 @@ impl Observable<tf_core::VideoEvent> for AnyVideo {
     }
 }
 
-impl TryFrom<&[&str]> for AnyVideo {
+impl TryFrom<Vec<String>> for AnyVideo {
     // TODO: Error handling
     type Error = ();
 
-    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
-        let platform = value.get(0).map(|&p| Platform::from_str(p));
+    fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
+        let platform = value.get(0).map(|p| Platform::from_str(p.as_str()));
         match platform {
             #[cfg(feature = "youtube")]
             Some(Ok(Platform::Youtube)) => {
@@ -333,8 +333,8 @@ mod test {
 
     #[test]
     fn anyvideo_conversion_test() {
-        let row = vec!["test", "Video", "Sub"];
-        let video_res: Result<AnyVideo, ()> = row.as_slice().try_into();
+        let row = vec!["test".to_string(), "Video".to_string(), "Sub".to_string()];
+        let video_res: Result<AnyVideo, ()> = row.try_into();
 
         assert!(video_res.is_ok());
 
@@ -346,7 +346,7 @@ mod test {
 
     #[test]
     fn anyvideo_conversion_test_back() {
-        let row = vec!["test", "Video", "Sub"];
+        let row = vec!["test".to_string(), "Video".to_string(), "Sub".to_string()];
         let video: AnyVideo = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
             "Video".to_string(),
             TestSubscription::new("Sub"),

@@ -65,12 +65,12 @@ impl std::fmt::Display for AnySubscription {
     }
 }
 
-impl TryFrom<&[&str]> for AnySubscription {
+impl TryFrom<Vec<String>> for AnySubscription {
     // TODO: Error handling
     type Error = ();
 
-    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
-        let platform = value.get(0).map(|&p| Platform::from_str(p));
+    fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
+        let platform = value.get(0).map(|p| Platform::from_str(p.as_str()));
         match platform {
             #[cfg(feature = "youtube")]
             Some(Ok(Platform::Youtube)) => {
@@ -168,8 +168,8 @@ mod test {
     #[test]
     #[cfg(feature = "youtube")]
     fn anysubscription_conversion_youtube() {
-        let row = vec!["youtube", "abcdef"];
-        let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
+        let row = vec!["youtube".to_string(), "abcdef".to_string()];
+        let subscription_res: Result<AnySubscription, ()> = row.try_into();
         assert!(subscription_res.is_ok());
 
         let subscription = subscription_res.unwrap();
@@ -180,7 +180,7 @@ mod test {
     #[test]
     #[cfg(feature = "youtube")]
     fn anysubscription_conversion_youtube_back() {
-        let row = vec!["youtube", "abcdef"];
+        let row = vec!["youtube".to_string(), "abcdef".to_string()];
         let subscription: AnySubscription = YTSubscription::new("abcdef").into();
 
         assert_eq!(Vec::<String>::from(subscription), row);
@@ -188,8 +188,8 @@ mod test {
 
     #[test]
     fn anysubscription_conversion_test() {
-        let row = vec!["test", "abcdef"];
-        let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
+        let row = vec!["test".to_string(), "abcdef".to_string()];
+        let subscription_res: Result<AnySubscription, ()> = row.try_into();
         assert!(subscription_res.is_ok());
 
         let subscription = subscription_res.unwrap();
@@ -199,7 +199,7 @@ mod test {
 
     #[test]
     fn anysubscription_conversion_test_back() {
-        let row = vec!["test", "abcdef"];
+        let row = vec!["test".to_string(), "abcdef".to_string()];
         let subscription: AnySubscription = TestSubscription::new("abcdef").into();
 
         assert_eq!(Vec::<String>::from(subscription), row);
@@ -207,16 +207,16 @@ mod test {
 
     #[test]
     fn anysubscription_conversion_fail_no_platform() {
-        let row = vec!["thiswillfail", "abcdef"];
-        let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
+        let row = vec!["thiswillfail".to_string(), "abcdef".to_string()];
+        let subscription_res: Result<AnySubscription, ()> = row.try_into();
         assert!(subscription_res.is_err());
     }
 
     #[test]
     #[cfg(feature = "youtube")]
     fn anysubscription_conversion_fail_to_short() {
-        let row = vec!["youtube"];
-        let subscription_res: Result<AnySubscription, ()> = row.as_slice().try_into();
+        let row = vec!["youtube".to_string()];
+        let subscription_res: Result<AnySubscription, ()> = row.try_into();
         assert!(subscription_res.is_err());
     }
 }
