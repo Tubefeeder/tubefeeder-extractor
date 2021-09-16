@@ -81,11 +81,11 @@ mod test {
     #[test]
     fn video_store_no_duplicates() {
         let mut store = VideoStore::<MockVideo>::new();
-        let arc1 = store.get(make_video(
+        let arc1 = store.get(&make_video(
             NaiveDate::from_ymd(2021, 8, 21).and_hms(0, 0, 0),
         ));
 
-        let arc2 = store.get(make_video(
+        let arc2 = store.get(&make_video(
             NaiveDate::from_ymd(2021, 8, 20).and_hms(0, 0, 0),
         ));
 
@@ -97,9 +97,9 @@ mod test {
         let mut store = VideoStore::<MockVideo>::new();
 
         let date = NaiveDate::from_ymd(2021, 8, 21).and_hms(0, 0, 0);
-        let arc1 = store.get(make_video(date.clone()));
+        let arc1 = store.get(&make_video(date.clone()));
 
-        let arc2 = store.get(make_video(date));
+        let arc2 = store.get(&make_video(date));
 
         assert_eq!(store.videos.len(), 1);
         assert!(Arc::ptr_eq(&arc1, &arc2));
