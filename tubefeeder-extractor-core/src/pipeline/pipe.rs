@@ -32,7 +32,7 @@ pub struct Pipeline<S, V> {
     /// The [SubscriptionList] used in the [Merger].
     subscription_list: Arc<Mutex<SubscriptionList<S>>>,
     /// The [VideoStore] used in the [Expander].
-    _video_store: Arc<Mutex<VideoStore<ExpandedVideo<V>>>>,
+    video_store: Arc<Mutex<VideoStore<ExpandedVideo<V>>>>,
 
     /// The [Generator] to get the [Video]s from.
     store_access: StoreAccess<ExpandedVideo<V>, Expander<V, Merger<S, V>>>,
@@ -47,15 +47,15 @@ where
     /// Create a new [Pipeline] with no [Subscription]s.
     pub fn new() -> Self {
         let subscription_list = Arc::new(Mutex::new(SubscriptionList::new()));
-        let _video_store = Arc::new(Mutex::new(VideoStore::new()));
+        let video_store = Arc::new(Mutex::new(VideoStore::new()));
 
         let merger = Merger::new(subscription_list.clone());
         let expander = Expander::new(merger);
-        let store_access = StoreAccess::new(_video_store.clone(), expander);
+        let store_access = StoreAccess::new(video_store.clone(), expander);
 
         Pipeline {
             subscription_list,
-            _video_store,
+            video_store,
 
             store_access,
         }
@@ -67,6 +67,11 @@ where
     /// [Pipeline].
     pub fn subscription_list(&self) -> Arc<Mutex<SubscriptionList<S>>> {
         self.subscription_list.clone()
+    }
+
+    /// Upgrade a video from a normal video to a video in the video storage of the pipeline.
+    pub fn upgrade_video(&self, video: &ExpandedVideo<V>) -> Arc<Mutex<ExpandedVideo<V>>> {
+        self.video_store.lock().unwrap().get(video)
     }
 }
 

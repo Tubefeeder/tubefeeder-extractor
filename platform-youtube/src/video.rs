@@ -35,6 +35,28 @@ pub struct YTVideo {
     pub(crate) thumbnail_url: String,
 }
 
+impl YTVideo {
+    pub fn new<T: AsRef<str>>(
+        url: T,
+        title: T,
+        uploaded: chrono::NaiveDateTime,
+        subscription: YTSubscription,
+        thumbnail_url: T,
+    ) -> Self {
+        Self {
+            url: url.as_ref().to_owned(),
+            title: title.as_ref().to_owned(),
+            uploaded,
+            subscription,
+            thumbnail_url: thumbnail_url.as_ref().to_owned(),
+        }
+    }
+
+    pub fn thumbnail_url(&self) -> String {
+        self.thumbnail_url.clone()
+    }
+}
+
 #[async_trait]
 impl tf_core::Video for YTVideo {
     type Subscription = YTSubscription;

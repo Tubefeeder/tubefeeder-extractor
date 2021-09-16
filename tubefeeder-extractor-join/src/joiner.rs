@@ -82,6 +82,16 @@ impl Joiner {
     pub fn filters(&self) -> Arc<Mutex<FilterGroup<AnyVideoFilter>>> {
         self.filters.clone()
     }
+
+    /// Upgrades a normal [AnyVideo] into a [AnyVideo] in the video storage of the pipelines.
+    pub fn upgrade_video(&self, video: &AnyVideo) -> AnyVideo {
+        match video {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(v) => self.yt_pipeline.upgrade_video(&v.lock().unwrap()).into(),
+            #[cfg(test)]
+            AnyVideo::Test(v) => self.test_pipeline.upgrade_video(&v.lock().unwrap()).into(),
+        }
+    }
 }
 
 #[async_trait]

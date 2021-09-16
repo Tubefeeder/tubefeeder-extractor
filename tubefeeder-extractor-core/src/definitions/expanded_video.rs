@@ -121,6 +121,11 @@ impl<V: Video> ExpandedVideo<V> {
     pub fn playing(&self) -> bool {
         self.playing
     }
+
+    /// Get a clone of the internal video.
+    pub fn internal(&self) -> V {
+        self.video.clone()
+    }
 }
 
 /// A event thrown by [ExpandedVideo].

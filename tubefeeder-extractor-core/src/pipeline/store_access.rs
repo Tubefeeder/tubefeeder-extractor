@@ -60,7 +60,7 @@ where
     async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         let store = self.store.clone();
         let gen_iter = self.generator.generate(&errors).await;
-        let map = gen_iter.map(move |v| store.lock().unwrap().get(v));
+        let map = gen_iter.map(move |v| store.lock().unwrap().get(&v));
         Box::new(map) as <Self as Generator>::Iterator
     }
 }

@@ -18,16 +18,20 @@
  */
 
 use std::{
+    convert::TryFrom,
     path::Path,
+    str::FromStr,
     sync::{Arc, Mutex},
 };
 
 use async_trait::async_trait;
 
-use tf_core::{ExpandedVideo, Video};
+use tf_core::{ExpandedVideo, Subscription, Video};
 use tf_observer::{Observable, Observer};
 
 use crate::{AnySubscription, Platform};
+
+const DATE_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S";
 
 /// A [Video] coming from any [Platform].
 #[derive(Clone)]
@@ -54,10 +58,20 @@ impl std::cmp::PartialEq for AnyVideo {
         match (self, other) {
             #[cfg(feature = "youtube")]
             (AnyVideo::Youtube(v1), AnyVideo::Youtube(v2)) => {
-                v1.lock().unwrap().eq(&v2.lock().unwrap())
+                if Arc::ptr_eq(v1, v2) {
+                    true
+                } else {
+                    v1.lock().unwrap().eq(&v2.lock().unwrap())
+                }
             }
             #[cfg(test)]
-            (AnyVideo::Test(v1), AnyVideo::Test(v2)) => v1.lock().unwrap().eq(&v2.lock().unwrap()),
+            (AnyVideo::Test(v1), AnyVideo::Test(v2)) => {
+                if Arc::ptr_eq(v1, v2) {
+                    true
+                } else {
+                    v1.lock().unwrap().eq(&v2.lock().unwrap())
+                }
+            }
             #[allow(unreachable_patterns)]
             _ => false,
         }
@@ -198,6 +212,81 @@ impl Observable<tf_core::VideoEvent> for AnyVideo {
     }
 }
 
+impl TryFrom<&[&str]> for AnyVideo {
+    // TODO: Error handling
+    type Error = ();
+
+    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
+        let platform = value.get(0).map(|&p| Platform::from_str(p));
+        match platform {
+            #[cfg(feature = "youtube")]
+            Some(Ok(Platform::Youtube)) => {
+                let url_opt = value.get(1);
+                let title = value.get(2);
+                let uploaded = value.get(3);
+                let sub_name = value.get(4);
+                let sub_id = value.get(5);
+                let thumbnail_url = value.get(6);
+                match (url_opt, title, uploaded, sub_name, sub_id, thumbnail_url) {
+                    (Some(url), Some(tit), Some(upl), Some(sub_n), Some(sub_i), Some(thu)) => {
+                        let upl_date = chrono::NaiveDateTime::parse_from_str(upl, DATE_FORMAT);
+                        if let Ok(upl) = upl_date {
+                            let sub = tf_yt::YTSubscription::new_with_name(sub_i, sub_n);
+                            Ok(Arc::new(Mutex::new(ExpandedVideo::from(tf_yt::YTVideo::new(
+                                url, tit, upl, sub, thu,
+                            ))))
+                            .into())
+                        } else {
+                            Err(())
+                        }
+                    }
+                    _ => Err(()),
+                }
+            }
+            #[cfg(test)]
+            Some(Ok(Platform::Test)) => {
+                let title = value.get(1);
+                let sub_id = value.get(2);
+                match (title, sub_id) {
+                    (Some(t), Some(s)) => Ok(Arc::new(Mutex::new(ExpandedVideo::from(
+                        tf_test::TestVideo::new(t, tf_test::TestSubscription::new(s)),
+                    )))
+                    .into()),
+                    _ => Err(()),
+                }
+            }
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<AnyVideo> for Vec<String> {
+    fn from(video: AnyVideo) -> Self {
+        let mut result = vec![video.platform().into()];
+        match video {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(v_arc) => {
+                let v = v_arc.lock().unwrap();
+                result.push(v.url());
+                result.push(v.title());
+                result.push(v.uploaded().format(DATE_FORMAT).to_string());
+                let sub = v.subscription();
+                result.push(sub.name().unwrap_or("".to_string()));
+                result.push(sub.id());
+                result.push(v.internal().thumbnail_url());
+            }
+            #[cfg(test)]
+            AnyVideo::Test(v_arc) => {
+                let v = v_arc.lock().unwrap();
+                result.push(v.title());
+                result.push(v.subscription().name().unwrap_or("".to_string()));
+            }
+        }
+
+        return result;
+    }
+}
+
 #[cfg(feature = "youtube")]
 impl From<Arc<Mutex<ExpandedVideo<tf_yt::YTVideo>>>> for AnyVideo {
     fn from(v: Arc<Mutex<ExpandedVideo<tf_yt::YTVideo>>>) -> Self {
@@ -209,5 +298,61 @@ impl From<Arc<Mutex<ExpandedVideo<tf_yt::YTVideo>>>> for AnyVideo {
 impl From<Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>> for AnyVideo {
     fn from(v: Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>) -> Self {
         AnyVideo::Test(v)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::convert::TryInto;
+    use tf_test::{TestSubscription, TestVideo};
+
+    #[test]
+    fn anyvideo_eq() {
+        let s1 = TestSubscription::new("Channel1");
+        let v1: AnyVideo = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
+            "Video1",
+            s1.clone(),
+        ))))
+        .into();
+        let v2: AnyVideo = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
+            "Video1",
+            s1.clone(),
+        ))))
+        .into();
+        let v3: AnyVideo = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
+            "Video2",
+            s1.clone(),
+        ))))
+        .into();
+
+        assert!(v1 == v1);
+        assert!(v1 == v2);
+        assert!(v1 != v3);
+    }
+
+    #[test]
+    fn anyvideo_conversion_test() {
+        let row = vec!["test", "Video", "Sub"];
+        let video_res: Result<AnyVideo, ()> = row.as_slice().try_into();
+
+        assert!(video_res.is_ok());
+
+        let video = video_res.unwrap();
+
+        assert_eq!(video.title(), "Video");
+        assert_eq!(video.subscription().name(), Some("Sub".to_string()));
+    }
+
+    #[test]
+    fn anyvideo_conversion_test_back() {
+        let row = vec!["test", "Video", "Sub"];
+        let video: AnyVideo = Arc::new(Mutex::new(ExpandedVideo::from(TestVideo::new(
+            "Video".to_string(),
+            TestSubscription::new("Sub"),
+        ))))
+        .into();
+
+        assert_eq!(Vec::<String>::from(video), row);
     }
 }

@@ -40,18 +40,18 @@ impl<V: Hash + Clone + std::cmp::Eq> VideoStore<V> {
     ///
     /// This will either insert this video into the `VideoStore` or get a
     /// already existing instance.
-    pub(crate) fn get(&mut self, video: V) -> Arc<Mutex<V>> {
-        if let Some(value) = self.videos.get(&video) {
+    pub(crate) fn get(&mut self, video: &V) -> Arc<Mutex<V>> {
+        if let Some(value) = self.videos.get(video) {
             if let Some(strong) = value.upgrade() {
                 strong
             } else {
                 let value = Arc::new(Mutex::new(video.clone()));
-                self.videos.insert(video, Arc::downgrade(&value));
+                self.videos.insert(video.clone(), Arc::downgrade(&value));
                 value
             }
         } else {
             let value = Arc::new(Mutex::new(video.clone()));
-            self.videos.insert(video, Arc::downgrade(&value));
+            self.videos.insert(video.clone(), Arc::downgrade(&value));
             value
         }
     }
