@@ -1,11 +1,11 @@
 # Tubefeeder-extractor
 
-This is a reworked backend for [Tubefeeder](https://github.com/Schmiddiii/Tubefeeder), that is in very early stages but will soon be used as a the new backend.
+This is a reworked backend for [Tubefeeder](https://github.com/Schmiddiii/Tubefeeder), it will soon be used as the new backend.
 This could of course also be used for other projects.
 
 ## Supported Features
 
-Currently subscribing, filters and "currently playing" are supported, with plans to integrate playlists.
+Currently subscribing, filters, playlists and "currently playing" are supported.
 
 ## Supported Platforms
 
