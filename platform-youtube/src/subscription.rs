@@ -25,7 +25,8 @@ use tf_core::{Error, ErrorStore, GeneratorWithClient, NetworkError, ParseError, 
 
 fn feed_url() -> String {
     #[cfg(not(test))]
-    let url = "https://www.youtube.com/feeds/videos.xml?channel_id=".to_owned();
+    let url = std::env::var("YOUTUBE_BASE_URL").unwrap_or("https://www.youtube.com".to_owned())
+        + "/feeds/videos.xml?channel_id=";
     #[cfg(test)]
     let url = format!("{}/{}/", mockito::server_url(), "youtube");
 
