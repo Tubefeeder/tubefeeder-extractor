@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 tf_core = { package = "tubefeeder-extractor-core", path = "../tubefeeder-extractor-core" }
 
-rusty_pipe = { git = "https://github.com/Tubefeeder/rusty_pipe.git", rev = "6fb1298483906ba9f872d02bf83bcdf339e00b1f" }
+rusty_pipe = { git = "https://github.com/Tubefeeder/rusty_pipe.git", rev = "4361ea032f6468748b9874aa468371a930d29ea0" }
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }

@@ -61,7 +61,8 @@ impl YTSubscription {
     /// Try to interpret the given string as a id first, if this fails try
     /// to interpret it as a name.
     pub async fn from_id_or_name(id_or_name: &str) -> Result<Self, Error> {
-        let extractor = YTChannelExtractor::new::<crate::Downloader>(id_or_name, None).await;
+        let downloader = crate::Downloader(reqwest::Client::new());
+        let extractor = YTChannelExtractor::new(downloader, id_or_name, None).await;
         if extractor.is_ok() {
             Ok(Self::new(id_or_name))
         } else {
@@ -111,12 +112,12 @@ impl YTSubscription {
 
     /// Try to get the channel name from the channel id.
     pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
-        let error_store = ErrorStore::new();
-        let mut videos = self.generate_with_client(&error_store, client).await;
-        if let Some(video) = videos.next() {
-            return video.subscription.name();
+        let downloader = crate::Downloader(client.clone());
+        let extractor_res = YTChannelExtractor::new(downloader, &self.id, None).await;
+        if let Ok(extractor) = extractor_res {
+            extractor.name().ok()
         } else {
-            return None;
+            None
         }
     }
 }

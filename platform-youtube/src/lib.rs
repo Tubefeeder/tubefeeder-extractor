@@ -29,12 +29,15 @@ use std::{collections::HashMap, str::FromStr};
 use async_trait::async_trait;
 use rusty_pipe::ParsingError;
 
-pub(crate) struct Downloader {}
+pub(crate) struct Downloader(reqwest::Client);
 
 #[async_trait]
 impl rusty_pipe::Downloader for Downloader {
-    async fn download(url: &str) -> Result<String, ParsingError> {
-        let resp = reqwest::get(url)
+    async fn download(&self, url: &str) -> Result<String, ParsingError> {
+        let resp = self
+            .0
+            .get(url)
+            .send()
             .await
             .map_err(|er| ParsingError::DownloadError {
                 cause: er.to_string(),
@@ -49,10 +52,11 @@ impl rusty_pipe::Downloader for Downloader {
     }
 
     async fn download_with_header(
+        &self,
         url: &str,
         header: HashMap<String, String>,
     ) -> Result<String, ParsingError> {
-        let res = reqwest::Client::new().get(url);
+        let res = self.0.get(url);
         let mut headers = reqwest::header::HeaderMap::new();
         for header in header {
             headers.insert(
@@ -66,7 +70,7 @@ impl rusty_pipe::Downloader for Downloader {
         Ok(String::from(body))
     }
 
-    fn eval_js(_script: &str) -> Result<String, String> {
+    fn eval_js(&self, _script: &str) -> Result<String, String> {
         Err("".to_string())
     }
 }
