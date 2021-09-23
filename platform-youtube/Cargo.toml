@@ -1,6 +1,6 @@
 [package]
 name = "platform-youtube"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 tf_core = { package = "tubefeeder-extractor-core", path = "../tubefeeder-extractor-core" }
 
-rusty_pipe = { git = "https://github.com/Tubefeeder/rusty_pipe.git", rev = "3c3ceded9cd424b7c04d1fe76b967f003ba28ac0" }
+rusty_pipe = { git = "https://github.com/Tubefeeder/rusty_pipe.git", tag = "0.1.0" }
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
