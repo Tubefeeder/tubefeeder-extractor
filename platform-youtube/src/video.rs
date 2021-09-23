@@ -19,12 +19,13 @@
 
 use std::path::Path;
 
-use crate::structure::*;
 use crate::subscription::YTSubscription;
 
 use async_trait::async_trait;
 use gdk_pixbuf::gio::{MemoryInputStream, NONE_CANCELLABLE};
 use gdk_pixbuf::Pixbuf;
+use rusty_pipe::extractors::YTStreamInfoItemExtractor;
+use tf_core::ErrorStore;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct YTVideo {
@@ -130,25 +131,24 @@ impl tf_core::Video for YTVideo {
     }
 }
 
-impl From<Feed> for Vec<YTVideo> {
-    fn from(feed: Feed) -> Self {
-        feed.entries.into_iter().map(|e| e.into()).collect()
-    }
-}
-
-impl From<Entry> for YTVideo {
-    fn from(e: Entry) -> Self {
-        let subscription = YTSubscription::new_with_name(
-            e.author.uri.split('/').last().unwrap_or(""),
-            &e.author.name,
-        );
-
+impl YTVideo {
+    pub(crate) fn from_extractor(
+        _errors: &ErrorStore,
+        v: YTStreamInfoItemExtractor,
+        subscription: YTSubscription,
+    ) -> Self {
         YTVideo {
-            url: e.link.href.to_string(),
-            title: e.title,
+            url: v.url().unwrap_or("".to_string()),
+            title: v.name().unwrap_or("".to_string()),
             subscription,
-            uploaded: e.published,
-            thumbnail_url: e.media.thumbnail.url,
+            uploaded: v
+                .upload_date()
+                .unwrap_or(chrono::NaiveDate::from_num_days_from_ce(0).and_hms(0, 0, 0)),
+            thumbnail_url: v
+                .thumbnails()
+                .map(|v| v.get(0).map(|t| t.url.clone()))
+                .unwrap_or(None)
+                .unwrap_or("".to_string()),
         }
     }
 }

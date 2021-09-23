@@ -17,7 +17,6 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod structure;
 mod subscription;
 mod video;
 
@@ -29,6 +28,7 @@ use std::{collections::HashMap, str::FromStr};
 use async_trait::async_trait;
 use rusty_pipe::ParsingError;
 
+#[derive(Clone)]
 pub(crate) struct Downloader(reqwest::Client);
 
 #[async_trait]

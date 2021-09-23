@@ -17,21 +17,11 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::{structure::Feed, video::YTVideo};
+use crate::video::YTVideo;
 
 use async_trait::async_trait;
 use rusty_pipe::extractors::YTChannelExtractor;
 use tf_core::{Error, ErrorStore, GeneratorWithClient, NetworkError, ParseError, Subscription};
-
-fn feed_url() -> String {
-    #[cfg(not(test))]
-    let url = std::env::var("YOUTUBE_BASE_URL").unwrap_or("https://www.youtube.com".to_owned())
-        + "/feeds/videos.xml?channel_id=";
-    #[cfg(test)]
-    let url = format!("{}/{}/", mockito::server_url(), "youtube");
-
-    url
-}
 
 /// A [`YTSubscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -120,6 +110,13 @@ impl YTSubscription {
             None
         }
     }
+
+    fn with_name(&self, name: &str) -> Self {
+        Self {
+            id: self.id.clone(),
+            name: Some(name.to_string()),
+        }
+    }
 }
 
 impl Subscription for YTSubscription {
@@ -141,123 +138,43 @@ impl std::fmt::Display for YTSubscription {
 impl GeneratorWithClient for YTSubscription {
     type Item = YTVideo;
     type Iterator = std::vec::IntoIter<Self::Item>;
+
     async fn generate_with_client(
         &self,
         errors: &ErrorStore,
         client: &reqwest::Client,
     ) -> Self::Iterator {
+        let downloader = crate::Downloader(client.clone());
         log::debug!(
             "Generating YT videos from channel {}",
             self.name().unwrap_or_else(|| self.id())
         );
 
-        let url = format!("{}{}", feed_url(), self.id());
-        let result = client.get(&url).send().await;
-        if let Err(_e) = result {
-            errors.add(NetworkError(url).into());
+        let channel_extractor_res =
+            YTChannelExtractor::new(downloader.clone(), &self.id, None).await;
+
+        if channel_extractor_res.is_err() {
+            // TODO: Url?
+            errors.add(NetworkError("Youtube".to_string()).into());
             return vec![].into_iter();
         }
 
-        if !result.as_ref().unwrap().status().is_success() {
-            errors.add(NetworkError(url).into());
+        let channel_extractor = channel_extractor_res.unwrap();
+
+        let videos_res = channel_extractor.videos();
+        let name = channel_extractor.name().unwrap_or("".to_string());
+
+        if videos_res.is_err() {
+            // TODO: Cause?
+            errors.add(ParseError("Youtube".to_string()).into());
             return vec![].into_iter();
         }
 
-        let body = result.unwrap().text().await;
-        if let Err(_e) = body {
-            errors.add(NetworkError(url).into());
-            return vec![].into_iter();
-        }
-
-        // Replace all occurrences of `media:` with `media_` as serde does not seem to like `:`.
-        let body_parsable = body.unwrap().replace("media:", "media_");
-
-        let parsed = quick_xml::de::from_str::<Feed>(&body_parsable);
-        if let Err(_e) = parsed {
-            errors.add(tf_core::ParseError(format!("channel {}", self.id())).into());
-            return vec![].into_iter();
-        }
-
-        log::debug!(
-            "Finished Generating YT videos from channel {}",
-            self.name().unwrap_or_else(|| self.id())
-        );
-
-        Vec::<YTVideo>::from(parsed.unwrap()).into_iter()
-    }
-}
-#[cfg(test)]
-mod test {
-    use super::*;
-    use mockito::{mock, Matcher};
-    use tf_core::Generator;
-
-    fn expected_videos() -> Vec<YTVideo> {
-        let subscription = YTSubscription::new_with_name("ThisIsAChannelId", "ChannelName");
-        let video1 = YTVideo {
-            url: "https://www.youtube.com/watch?v=videoid1".to_string(),
-            title: "VIDEO 1 !! Click".to_string(),
-            subscription: subscription.clone(),
-            uploaded: chrono::NaiveDate::from_ymd(2021, 7, 19).and_hms(16, 18, 6),
-            thumbnail_url: "https://i4.ytimg.com/vi/videoid1/hqdefault.jpg".to_owned(),
-        };
-        let video2 = YTVideo {
-            url: "https://www.youtube.com/watch?v=videoid2".to_string(),
-            title: "VIDEO 2 !! Click".to_string(),
-            subscription,
-            uploaded: chrono::NaiveDate::from_ymd(2021, 7, 29).and_hms(16, 18, 6),
-            thumbnail_url: "https://i4.ytimg.com/vi/videoid2/hqdefault.jpg".to_owned(),
-        };
-
-        vec![video1, video2]
-    }
-
-    #[tokio::test]
-    async fn youtube_generator() {
-        let _m = mock("GET", Matcher::Regex(r"^/youtube/".to_string()))
-            .with_status(200)
-            .with_body(include_str!("../resources/test/youtubefeed.xml"))
-            .create();
-
-        let errors = ErrorStore::new();
-
-        let videos = YTSubscription::new("ThisIsAChannelId")
-            .generate(&errors)
-            .await;
-
-        assert_eq!(videos.collect::<Vec<_>>(), expected_videos());
-    }
-
-    #[tokio::test]
-    async fn youtube_generator_parse_error() {
-        let _m = mock("GET", Matcher::Regex(r"^/youtube/".to_string()))
-            .with_status(200)
-            .with_body(include_str!("../resources/test/youtubefeed_invalid.xml"))
-            .create();
-
-        let errors = ErrorStore::new();
-
-        let videos = YTSubscription::new("ThisIsAChannelId")
-            .generate(&errors)
-            .await;
-
-        assert_eq!(videos.count(), 0);
-        assert_eq!(errors.summary().parse(), 1);
-        assert_eq!(errors.summary().network(), 0);
-    }
-
-    #[tokio::test]
-    async fn youtube_generator_network_error() {
-        let _m = mock("GET", Matcher::Regex(r"$a".to_string())).create();
-
-        let errors = ErrorStore::new();
-
-        let videos = YTSubscription::new("ThisIsAChannelId")
-            .generate(&errors)
-            .await;
-
-        assert_eq!(videos.count(), 0);
-        assert_eq!(errors.summary().parse(), 0);
-        assert_eq!(errors.summary().network(), 1);
+        videos_res
+            .unwrap()
+            .into_iter()
+            .map(|v| YTVideo::from_extractor(errors, v, self.with_name(&name)))
+            .collect::<Vec<YTVideo>>()
+            .into_iter()
     }
 }
