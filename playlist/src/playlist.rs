@@ -17,35 +17,34 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::hash::Hash;
-use std::{collections::HashSet, sync::Mutex};
+use std::sync::Mutex;
 
 use tf_observer::{Observable, Observer, ObserverList};
 
 pub struct Playlist<T> {
     observers: ObserverList<PlaylistEvent<T>>,
-    playlist: HashSet<T>,
+    playlist: Vec<T>,
 }
 
 impl<T> Playlist<T>
 where
-    T: Hash + Eq + Clone,
+    T: Eq + Clone,
 {
     pub fn new() -> Self {
         Self {
             observers: ObserverList::new(),
-            playlist: HashSet::new(),
+            playlist: Vec::new(),
         }
     }
 
     pub fn toggle(&mut self, item: &T) {
-        if let Some(_i) = self.playlist.get(item) {
+        if let Some(_i) = self.playlist.iter().find(|&i| i == item) {
             log::debug!("Removing item from playlist");
-            self.playlist.remove(item);
+            self.playlist.retain(|i| i != item);
             self.observers.notify(PlaylistEvent::Remove(item.clone()))
         } else {
             log::debug!("Adding item to playlist");
-            self.playlist.insert(item.clone());
+            self.playlist.push(item.clone());
             self.observers.notify(PlaylistEvent::Add(item.clone()))
         }
     }
@@ -59,13 +58,13 @@ where
     }
 
     pub fn get(&self, item: &T) -> Option<&T> {
-        self.playlist.get(item)
+        self.playlist.iter().find(|&i| i == item)
     }
 }
 
 impl<T> Default for Playlist<T>
 where
-    T: Hash + Eq + Clone,
+    T: Eq + Clone,
 {
     fn default() -> Self {
         Self::new()
