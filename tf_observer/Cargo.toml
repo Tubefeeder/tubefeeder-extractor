@@ -1,0 +1,17 @@
+[package]
+name = "tf_observer"
+version = "0.1.0"
+edition = "2018"
+license = "GPL-1.0-or-later"
+description = "The observer pattern used in Tubefeeder"
+homepage = "https://www.tubefeeder.de"
+repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
+keywords = [ "tubefeeder" ]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dev-dependencies]
+mockall = "0.10.2"
+mockito = "0.30.0"

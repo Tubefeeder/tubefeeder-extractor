@@ -1,0 +1,35 @@
+[package]
+name = "tf_join"
+version = "0.1.0"
+edition = "2018"
+license = "GPL-1.0-or-later"
+description = "Join multiple platforms in Tubefeeder"
+homepage = "https://www.tubefeeder.de"
+repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
+keywords = [ "tubefeeder" ]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tf_observer = { version = "0.1.0", path = "../tf_observer" }
+tf_core = { version = "0.1.0", path = "../tf_core" }
+tf_filter = { version = "0.1.0", path = "../tf_filter"}
+tf_yt = { package = "tf_platform_youtube", path = "../tf_platform_youtube", optional = true}
+
+async-trait = "^0.1"
+chrono = { version = "^0.4", features = [ "serde" ] }
+regex = "^1.5"
+reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
+tokio = { version = "^1.9", features = [ "macros" ] }
+futures = "^0.3"
+gdk-pixbuf = "^0.14"
+
+log = "^0.4"
+
+[dev-dependencies]
+env_logger =  "^0.9"
+tf_test = { package = "tf_platform_test", path = "../tf_platform_test"}
+
+[features]
+default = ["youtube"]
+youtube = ["tf_yt"]

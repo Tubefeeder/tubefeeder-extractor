@@ -1,10 +1,10 @@
 [workspace]
 members = [
-    "tubefeeder-extractor-join",
-    "tubefeeder-extractor-core",
-    "tubefeeder-extractor-filter",
-    "platform-youtube",
-    "platform-test",
-    "observer",
-    "playlist"
+    "tf_core",
+    "tf_join",
+    "tf_filter",
+    "tf_observer",
+    "tf_playlist",
+    "tf_platform_youtube",
+    "tf_platform_test"
 ]
