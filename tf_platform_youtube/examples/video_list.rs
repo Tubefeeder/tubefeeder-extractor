@@ -117,9 +117,10 @@ pub async fn main() {
         let video = video.lock().unwrap();
         let subscription = video.subscription();
         println!(
-            "{}: {}",
+            "{}: {} ({:?})",
             subscription.name().unwrap_or(subscription.id()),
-            video.title()
+            video.title(),
+            video.uploaded()
         );
     }
 }

@@ -20,8 +20,11 @@
 use crate::video::YTVideo;
 
 use async_trait::async_trait;
-use rusty_pipe::extractors::YTChannelExtractor;
+use futures::StreamExt;
+use invidious::Invidious;
 use tf_core::{Error, ErrorStore, GeneratorWithClient, NetworkError, ParseError, Subscription};
+
+const INVIDIOUS_URL: &str = "https://y.com.cm/";
 
 /// A [`YTSubscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -51,8 +54,8 @@ impl YTSubscription {
     /// Try to interpret the given string as a id first, if this fails try
     /// to interpret it as a name.
     pub async fn from_id_or_name(id_or_name: &str) -> Result<Self, Error> {
-        let downloader = crate::Downloader(reqwest::Client::new());
-        let extractor = YTChannelExtractor::new(downloader, id_or_name, None).await;
+        let invidious = Invidious::new(INVIDIOUS_URL, reqwest::Client::new());
+        let extractor = invidious.channel_client(id_or_name).await;
         if extractor.is_ok() {
             Ok(Self::new(id_or_name))
         } else {
@@ -102,10 +105,10 @@ impl YTSubscription {
 
     /// Try to get the channel name from the channel id.
     pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
-        let downloader = crate::Downloader(client.clone());
-        let extractor_res = YTChannelExtractor::new(downloader, &self.id, None).await;
-        if let Ok(extractor) = extractor_res {
-            extractor.name().ok()
+        let invidious = Invidious::new(INVIDIOUS_URL, client.clone());
+        let client_res = invidious.channel_client(&self.id).await;
+        if let Ok(client) = client_res {
+            Some(client.channel().author)
         } else {
             None
         }
@@ -144,37 +147,31 @@ impl GeneratorWithClient for YTSubscription {
         errors: &ErrorStore,
         client: &reqwest::Client,
     ) -> Self::Iterator {
-        let downloader = crate::Downloader(client.clone());
         log::debug!(
             "Generating YT videos from channel {}",
             self.name().unwrap_or_else(|| self.id())
         );
 
-        let channel_extractor_res =
-            YTChannelExtractor::new(downloader.clone(), &self.id, None).await;
+        let invidious = Invidious::new(INVIDIOUS_URL, client.clone());
 
-        if channel_extractor_res.is_err() {
+        let client_res = invidious.channel_client(&self.id).await.ok();
+
+        if client_res.is_none() {
             // TODO: Url?
             errors.add(NetworkError("Youtube".to_string()).into());
             return vec![].into_iter();
         }
 
-        let channel_extractor = channel_extractor_res.unwrap();
+        let client = client_res.unwrap();
 
-        let videos_res = channel_extractor.videos();
-        let name = channel_extractor.name().unwrap_or_else(|_| "".to_string());
+        let videos_stream = Box::pin(client.videos()).take(15);
 
-        if videos_res.is_err() {
-            // TODO: Cause?
-            errors.add(ParseError("Youtube".to_string()).into());
-            return vec![].into_iter();
-        }
+        let name = client.channel().author;
 
-        videos_res
-            .unwrap()
-            .into_iter()
+        videos_stream
             .map(|v| YTVideo::from_extractor(errors, v, self.with_name(&name)))
             .collect::<Vec<YTVideo>>()
+            .await
             .into_iter()
     }
 }

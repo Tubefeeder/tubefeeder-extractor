@@ -12,8 +12,7 @@ keywords = [ "tubefeeder" ]
 
 [dependencies]
 tf_core = { package = "tf_core", path = "../tf_core" }
-
-rusty_pipe = { git = "https://github.com/Tubefeeder/rusty_pipe.git", tag = "0.1.0" }
+invidious = { package = "invidious-client", git = "https://github.com/Tubefeeder/invidious-client.git", rev = "bcc6ddeb34d2280abd898029de18c3dfd34215cf" }
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
