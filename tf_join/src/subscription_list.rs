@@ -21,10 +21,13 @@ use std::sync::{Arc, Mutex};
 
 use tf_core::SubscriptionList;
 use tf_observer::{Observable, Observer, ObserverList};
+#[cfg(feature = "peertube")]
+use tf_pt::PTSubscription;
 #[cfg(test)]
 use tf_test::TestSubscription;
 #[cfg(feature = "youtube")]
 use tf_yt::YTSubscription;
+// -- Add import here.
 
 use crate::AnySubscription;
 
@@ -37,6 +40,9 @@ pub struct AnySubscriptionList {
 
     #[cfg(feature = "youtube")]
     yt_subscriptions: Arc<Mutex<SubscriptionList<YTSubscription>>>,
+    #[cfg(feature = "peertube")]
+    pt_subscriptions: Arc<Mutex<SubscriptionList<PTSubscription>>>,
+    // -- Add value here.
     #[cfg(test)]
     test_subscriptions: Arc<Mutex<SubscriptionList<TestSubscription>>>,
 }
@@ -52,6 +58,9 @@ impl AnySubscriptionList {
 
             #[cfg(feature = "youtube")]
             yt_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
+            #[cfg(feature = "peertube")]
+            pt_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
+            // -- Add value here.
             #[cfg(test)]
             test_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
         }
@@ -62,6 +71,14 @@ impl AnySubscriptionList {
     pub(crate) fn yt_subscriptions(&mut self, sub: Arc<Mutex<SubscriptionList<YTSubscription>>>) {
         self.yt_subscriptions = sub;
     }
+
+    /// Set the wrapped [SubscriptionList] for peertube.
+    #[cfg(feature = "youtube")]
+    pub(crate) fn pt_subscriptions(&mut self, sub: Arc<Mutex<SubscriptionList<PTSubscription>>>) {
+        self.pt_subscriptions = sub;
+    }
+
+    // -- Add funtion here
 
     /// Set the wrapped [SubscriptionList] for tests.
     #[cfg(test)]
@@ -79,6 +96,9 @@ impl AnySubscriptionList {
         match subscription.clone() {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(sub) => self.yt_subscriptions.lock().unwrap().add(sub),
+            #[cfg(feature = "peertube")]
+            AnySubscription::Peertube(sub) => self.pt_subscriptions.lock().unwrap().add(sub),
+            // -- Add case here.
             #[cfg(test)]
             AnySubscription::Test(sub) => self.test_subscriptions.lock().unwrap().add(sub),
         }
@@ -92,6 +112,9 @@ impl AnySubscriptionList {
         match subscription.clone() {
             #[cfg(feature = "youtube")]
             AnySubscription::Youtube(sub) => self.yt_subscriptions.lock().unwrap().remove(sub),
+            #[cfg(feature = "peertube")]
+            AnySubscription::Peertube(sub) => self.pt_subscriptions.lock().unwrap().remove(sub),
+            // -- Add case here.
             #[cfg(test)]
             AnySubscription::Test(sub) => self.test_subscriptions.lock().unwrap().remove(sub),
         }
@@ -113,6 +136,18 @@ impl AnySubscriptionList {
                 .map(|s| s.into())
                 .collect::<Vec<AnySubscription>>(),
         );
+        #[cfg(feature = "peertube")]
+        vec.append(
+            &mut self
+                .pt_subscriptions
+                .lock()
+                .unwrap()
+                .subscriptions()
+                .into_iter()
+                .map(|s| s.into())
+                .collect::<Vec<AnySubscription>>(),
+        );
+        // -- Add vec.append here.
         #[cfg(test)]
         vec.append(
             &mut self
