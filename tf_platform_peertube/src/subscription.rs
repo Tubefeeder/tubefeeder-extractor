@@ -10,6 +10,8 @@ pub struct PTSubscription {
 }
 
 impl PTSubscription {
+    /// Create a new peertube subscription. The base url should be the url peertube is accessible at.
+    /// The id should be in the format name@url (you will get that when copying the video channel id).
     pub fn new<S1: AsRef<str>, S2: AsRef<str>>(base_url: S1, id: S2) -> Self {
         // Format url to always have http(s) in the beginning and no ending /
         let mut url = base_url.as_ref().to_owned();
@@ -66,7 +68,7 @@ impl PTSubscription {
 
     fn feed_url(&self) -> String {
         format!(
-            "{}/feeds/videos.xml?videoChannelId={}",
+            "{}/feeds/videos.xml?videoChannelName={}",
             self.base_url, self.id
         )
     }
