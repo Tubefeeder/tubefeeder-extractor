@@ -8,6 +8,7 @@ pub(crate) struct Rss {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Channel {
+    pub(crate) title: String,
     #[serde(rename = "item")]
     pub(crate) items: Vec<Item>,
 }

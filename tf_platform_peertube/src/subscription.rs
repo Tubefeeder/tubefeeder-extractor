@@ -11,9 +11,17 @@ pub struct PTSubscription {
 
 impl PTSubscription {
     pub fn new<S1: AsRef<str>, S2: AsRef<str>>(base_url: S1, id: S2) -> Self {
+        // Format url to always have http(s) in the beginning and no ending /
+        let mut url = base_url.as_ref().to_owned();
+        if !url.starts_with("http") {
+            url = format!("https://{}", url);
+        }
+        if url.ends_with('/') {
+            url.pop();
+        }
         Self {
             id: id.as_ref().to_owned(),
-            base_url: base_url.as_ref().to_owned(),
+            base_url: url,
             name: None,
         }
     }
@@ -36,6 +44,31 @@ impl PTSubscription {
 
     pub fn base_url(&self) -> String {
         self.base_url.clone()
+    }
+
+    /// Try to get the channel name from the channel.
+    pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
+        let rss_res = parse_from_url(&self.feed_url(), client).await;
+        if let Ok(rss) = rss_res {
+            Some(rss.channel.title)
+        } else {
+            None
+        }
+    }
+
+    fn with_name<S: AsRef<str>>(&self, name: S) -> Self {
+        Self {
+            id: self.id.clone(),
+            base_url: self.base_url.clone(),
+            name: Some(name.as_ref().to_owned()),
+        }
+    }
+
+    fn feed_url(&self) -> String {
+        format!(
+            "{}/feeds/videos.xml?videoChannelId={}",
+            self.base_url, self.id
+        )
     }
 }
 
@@ -64,43 +97,50 @@ impl GeneratorWithClient for PTSubscription {
         errors: &tf_core::ErrorStore,
         client: &reqwest::Client,
     ) -> Self::Iterator {
-        let url = format!(
-            "{}/feeds/videos.xml?videoChannelId={}",
-            self.base_url, self.id
-        );
-        let response = client.get(url.clone()).send().await;
+        let rss_res = parse_from_url(&self.feed_url(), client).await;
 
-        if response.is_err() {
-            log::error!("Error getting {:?}", &url);
-            errors.add(NetworkError(url).into());
+        if rss_res.is_err() {
+            errors.add(rss_res.err().unwrap());
             return vec![].into_iter();
         }
 
-        let body_res = response.unwrap().text().await;
+        let rss = rss_res.unwrap();
 
-        if body_res.is_err() {
-            log::error!("Error getting {:?}", &url);
-            errors.add(NetworkError(url).into());
-            return vec![].into_iter();
-        }
-
-        let body_parsable = body_res.unwrap().replace("media:", "media/");
-
-        let rss: Result<Rss, quick_xml::de::DeError> = quick_xml::de::from_str(&body_parsable);
-
-        if rss.is_err() {
-            log::error!("Error parsing: {}", &rss.err().unwrap());
-            errors.add(ParseError(body_parsable).into());
-            return vec![].into_iter();
-        }
-
-        let items = rss.unwrap().channel.items;
+        let name = rss.channel.title;
+        let items = rss.channel.items;
 
         let items_pt_video: Vec<PTVideo> = items
             .into_iter()
-            .map(|i| PTVideo::from_item_and_sub(i, self.clone()))
+            .map(|i| PTVideo::from_item_and_sub(i, self.with_name(&name)))
             .collect();
 
         items_pt_video.into_iter()
     }
+}
+
+async fn parse_from_url(url: &str, client: &reqwest::Client) -> Result<Rss, tf_core::Error> {
+    let response = client.get(url.clone()).send().await;
+
+    if response.is_err() {
+        log::error!("Error getting {:?}", url);
+        return Err(NetworkError(url.to_string()).into());
+    }
+
+    let body_res = response.unwrap().text().await;
+
+    if body_res.is_err() {
+        log::error!("Error getting {:?}", url);
+        return Err(NetworkError(url.to_string()).into());
+    }
+
+    let body_parsable = body_res.unwrap().replace("media:", "media/");
+
+    let rss_res: Result<Rss, quick_xml::de::DeError> = quick_xml::de::from_str(&body_parsable);
+
+    if rss_res.is_err() {
+        log::error!("Error parsing: {}", &rss_res.err().unwrap());
+        return Err(ParseError(body_parsable).into());
+    }
+
+    Ok(rss_res.unwrap())
 }

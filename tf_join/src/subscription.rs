@@ -177,7 +177,7 @@ impl FromStr for Platform {
     type Err = ();
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value {
+        match value.to_lowercase().as_str() {
             #[cfg(feature = "youtube")]
             "youtube" => Ok(Platform::Youtube),
             #[cfg(feature = "peertube")]
@@ -197,9 +197,38 @@ impl From<Platform> for String {
             Platform::Youtube => "youtube".to_owned(),
             #[cfg(feature = "peertube")]
             Platform::Peertube => "peertube".to_owned(),
+            // -- Add new case here.
             #[cfg(test)]
             Platform::Test => "test".to_owned(),
         }
+    }
+}
+
+impl std::fmt::Display for Platform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            #[cfg(feature = "youtube")]
+            Platform::Youtube => write!(f, "Youtube"),
+            #[cfg(feature = "peertube")]
+            Platform::Peertube => write!(f, "Peertube"),
+            // -- Add new case here.
+            #[cfg(test)]
+            Platform::Test => write!(f, "Test"),
+        }
+    }
+}
+
+impl Platform {
+    pub fn values() -> Vec<Self> {
+        let mut result = vec![];
+        #[cfg(feature = "youtube")]
+        result.push(Platform::Youtube);
+        #[cfg(feature = "peertube")]
+        result.push(Platform::Peertube);
+        // -- Add new platform here.
+        #[cfg(test)]
+        result.push(Platform::Test);
+        result
     }
 }
 
