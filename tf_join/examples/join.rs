@@ -27,16 +27,20 @@ use tf_test::TestSubscription;
 #[cfg(feature = "youtube")]
 use tf_yt::YTSubscription;
 // -- Add import example here.
+#[cfg(feature = "lbry")]
+use tf_lbry::LbrySubscription;
 #[cfg(feature = "peertube")]
 use tf_pt::PTSubscription;
 
 #[cfg(feature = "youtube")]
 const YT_SUBSCRIPTION_IDS: &'static [&'static str] = &["UCj1VqrHhDte54oLgPG4xpuQ"];
 #[cfg(feature = "peertube")]
-const PT_SUBSCRIPTION_IDS: &'static [(&'static str, &'static str)] = &[
-    ("https://peertube.linuxrocks.online", "3300"),
-    ("https://peertube.linuxrocks.online", "3301"),
-];
+const PT_SUBSCRIPTION_IDS: &'static [(&'static str, &'static str)] = &[(
+    "https://peertube.linuxrocks.online",
+    "chrisweredigital@share.tube",
+)];
+#[cfg(feature = "lbry")]
+const LBRY_SUBSCRIPTION_IDS: &'static [&'static str] = &["@SomeOrdinaryGamers:a"];
 // -- Add const example here.
 #[cfg(test)]
 const TEST_SUBSCRIPTION_NAMES: &'static [&'static str] = &["Test1", "Test2"];
@@ -60,7 +64,12 @@ pub async fn main() {
         .iter()
         .map(|s| PTSubscription::new(s.0, s.1).into())
         .for_each(|sub: AnySubscription| subscription_list.add(sub));
-
+    #[cfg(feature = "peertube")]
+    LBRY_SUBSCRIPTION_IDS
+        .iter()
+        .map(|s| LbrySubscription::new(s).into())
+        .for_each(|sub: AnySubscription| subscription_list.add(sub));
+    // -- Add subscriptions here.
     #[cfg(test)]
     TEST_SUBSCRIPTION_NAMES
         .iter()
@@ -74,6 +83,8 @@ pub async fn main() {
             AnyVideo::Youtube(_v) => "YouT",
             #[cfg(feature = "peertube")]
             AnyVideo::Peertube(_v) => "Peer",
+            #[cfg(feature = "lbry")]
+            AnyVideo::Lbry(_v) => "Lbry",
             // -- Add case here.
             #[cfg(test)]
             AnyVideo::Test(_v) => "Test",

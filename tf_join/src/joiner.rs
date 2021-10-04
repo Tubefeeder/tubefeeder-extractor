@@ -44,6 +44,8 @@ pub struct Joiner {
     yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,
     #[cfg(feature = "peertube")]
     pt_pipeline: Pipeline<tf_pt::PTSubscription, tf_pt::PTVideo>,
+    #[cfg(feature = "lbry")]
+    lbry_pipeline: Pipeline<tf_lbry::LbrySubscription, tf_lbry::LbryVideo>,
     // -- Add value here.
     #[cfg(test)]
     test_pipeline: Pipeline<tf_test::TestSubscription, tf_test::TestVideo>,
@@ -56,6 +58,8 @@ impl Joiner {
         let yt_pipeline = Pipeline::new();
         #[cfg(feature = "peertube")]
         let pt_pipeline = Pipeline::new();
+        #[cfg(feature = "lbry")]
+        let lbry_pipeline = Pipeline::new();
         // -- Add value here.
         #[cfg(test)]
         let test_pipeline = Pipeline::new();
@@ -65,6 +69,8 @@ impl Joiner {
         subscriptions.yt_subscriptions(yt_pipeline.subscription_list());
         #[cfg(feature = "peertube")]
         subscriptions.pt_subscriptions(pt_pipeline.subscription_list());
+        #[cfg(feature = "lbry")]
+        subscriptions.lbry_subscriptions(lbry_pipeline.subscription_list());
         // -- Add function call here.
         #[cfg(test)]
         subscriptions.test_subscriptions(test_pipeline.subscription_list());
@@ -75,6 +81,8 @@ impl Joiner {
             yt_pipeline,
             #[cfg(feature = "peertube")]
             pt_pipeline,
+            #[cfg(feature = "lbry")]
+            lbry_pipeline,
             // -- Add value here.
             #[cfg(test)]
             test_pipeline,
@@ -102,6 +110,8 @@ impl Joiner {
             AnyVideo::Youtube(v) => self.yt_pipeline.upgrade_video(&v.lock().unwrap()).into(),
             #[cfg(feature = "peertube")]
             AnyVideo::Peertube(v) => self.pt_pipeline.upgrade_video(&v.lock().unwrap()).into(),
+            #[cfg(feature = "lbry")]
+            AnyVideo::Lbry(v) => self.lbry_pipeline.upgrade_video(&v.lock().unwrap()).into(),
             // -- Add case here.
             #[cfg(test)]
             AnyVideo::Test(v) => self.test_pipeline.upgrade_video(&v.lock().unwrap()).into(),
@@ -135,6 +145,12 @@ impl Generator for Joiner {
         #[cfg(feature = "peertube")]
         generators.push(Box::pin(async move {
             let iter = self.pt_pipeline.generate(errors).await;
+            let iter_mapped = iter.map(|v| v.into());
+            Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>
+        }));
+        #[cfg(feature = "lbry")]
+        generators.push(Box::pin(async move {
+            let iter = self.lbry_pipeline.generate(errors).await;
             let iter_mapped = iter.map(|v| v.into());
             Box::new(iter_mapped) as Box<dyn Iterator<Item = AnyVideo> + std::marker::Send>
         }));

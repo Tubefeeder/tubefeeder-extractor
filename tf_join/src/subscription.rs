@@ -28,6 +28,8 @@ pub enum AnySubscription {
     Youtube(tf_yt::YTSubscription),
     #[cfg(feature = "peertube")]
     Peertube(tf_pt::PTSubscription),
+    #[cfg(feature = "lbry")]
+    Lbry(tf_lbry::LbrySubscription),
     // -- Add new value here.
     #[cfg(test)]
     Test(tf_test::TestSubscription),
@@ -41,6 +43,8 @@ impl AnySubscription {
             AnySubscription::Youtube(_) => Platform::Youtube,
             #[cfg(feature = "peertube")]
             AnySubscription::Peertube(_) => Platform::Peertube,
+            #[cfg(feature = "lbry")]
+            AnySubscription::Lbry(_) => Platform::Lbry,
             // -- Add new case here.
             #[cfg(test)]
             AnySubscription::Test(_) => Platform::Test,
@@ -56,6 +60,8 @@ impl Subscription for AnySubscription {
             AnySubscription::Youtube(s) => s.name(),
             #[cfg(feature = "peertube")]
             AnySubscription::Peertube(s) => s.name(),
+            #[cfg(feature = "lbry")]
+            AnySubscription::Lbry(s) => s.name(),
             // -- Add new case here.
             #[cfg(test)]
             AnySubscription::Test(s) => s.name(),
@@ -70,6 +76,8 @@ impl std::fmt::Display for AnySubscription {
             AnySubscription::Youtube(s) => write!(f, "{}", s),
             #[cfg(feature = "peertube")]
             AnySubscription::Peertube(s) => write!(f, "{}", s),
+            #[cfg(feature = "lbry")]
+            AnySubscription::Lbry(s) => write!(f, "{}", s),
             // -- Add new case here.
             #[cfg(test)]
             AnySubscription::Test(s) => write!(f, "{}", s),
@@ -103,6 +111,14 @@ impl TryFrom<Vec<String>> for AnySubscription {
                     _ => Err(()),
                 }
             }
+            #[cfg(feature = "lbry")]
+            Some(Ok(Platform::Lbry)) => {
+                let id = value.get(1);
+                match id {
+                    Some(id) => Ok(tf_lbry::LbrySubscription::new(id).into()),
+                    _ => Err(()),
+                }
+            }
             // -- Add new case here.
             #[cfg(test)]
             Some(Ok(Platform::Test)) => {
@@ -128,6 +144,8 @@ impl From<AnySubscription> for Vec<String> {
                 result.push(s.id());
                 result.push(s.base_url());
             }
+            #[cfg(feature = "lbry")]
+            AnySubscription::Lbry(s) => result.push(s.id()),
             // -- Add new case here
             #[cfg(test)]
             AnySubscription::Test(s) => result.push(s.name().unwrap()),
@@ -151,6 +169,13 @@ impl From<tf_pt::PTSubscription> for AnySubscription {
     }
 }
 
+#[cfg(feature = "lbry")]
+impl From<tf_lbry::LbrySubscription> for AnySubscription {
+    fn from(s: tf_lbry::LbrySubscription) -> Self {
+        AnySubscription::Lbry(s)
+    }
+}
+
 // -- Add new conversion here
 
 #[cfg(test)]
@@ -167,6 +192,8 @@ pub enum Platform {
     Youtube,
     #[cfg(feature = "peertube")]
     Peertube,
+    #[cfg(feature = "lbry")]
+    Lbry,
     // -- Add new value here.
     #[cfg(test)]
     Test,
@@ -182,6 +209,8 @@ impl FromStr for Platform {
             "youtube" => Ok(Platform::Youtube),
             #[cfg(feature = "peertube")]
             "peertube" => Ok(Platform::Peertube),
+            #[cfg(feature = "lbry")]
+            "lbry" => Ok(Platform::Lbry),
             // -- Add new case here.
             #[cfg(test)]
             "test" => Ok(Platform::Test),
@@ -197,6 +226,8 @@ impl From<Platform> for String {
             Platform::Youtube => "youtube".to_owned(),
             #[cfg(feature = "peertube")]
             Platform::Peertube => "peertube".to_owned(),
+            #[cfg(feature = "lbry")]
+            Platform::Lbry => "lbry".to_owned(),
             // -- Add new case here.
             #[cfg(test)]
             Platform::Test => "test".to_owned(),
@@ -211,6 +242,8 @@ impl std::fmt::Display for Platform {
             Platform::Youtube => write!(f, "Youtube"),
             #[cfg(feature = "peertube")]
             Platform::Peertube => write!(f, "Peertube"),
+            #[cfg(feature = "lbry")]
+            Platform::Lbry => write!(f, "Lbry"),
             // -- Add new case here.
             #[cfg(test)]
             Platform::Test => write!(f, "Test"),
@@ -225,6 +258,8 @@ impl Platform {
         result.push(Platform::Youtube);
         #[cfg(feature = "peertube")]
         result.push(Platform::Peertube);
+        #[cfg(feature = "lbry")]
+        result.push(Platform::Lbry);
         // -- Add new platform here.
         #[cfg(test)]
         result.push(Platform::Test);

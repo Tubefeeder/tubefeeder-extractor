@@ -20,6 +20,8 @@
 use std::sync::{Arc, Mutex};
 
 use tf_core::SubscriptionList;
+#[cfg(feature = "lbry")]
+use tf_lbry::LbrySubscription;
 use tf_observer::{Observable, Observer, ObserverList};
 #[cfg(feature = "peertube")]
 use tf_pt::PTSubscription;
@@ -42,6 +44,8 @@ pub struct AnySubscriptionList {
     yt_subscriptions: Arc<Mutex<SubscriptionList<YTSubscription>>>,
     #[cfg(feature = "peertube")]
     pt_subscriptions: Arc<Mutex<SubscriptionList<PTSubscription>>>,
+    #[cfg(feature = "lbry")]
+    lbry_subscriptions: Arc<Mutex<SubscriptionList<LbrySubscription>>>,
     // -- Add value here.
     #[cfg(test)]
     test_subscriptions: Arc<Mutex<SubscriptionList<TestSubscription>>>,
@@ -60,6 +64,8 @@ impl AnySubscriptionList {
             yt_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
             #[cfg(feature = "peertube")]
             pt_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
+            #[cfg(feature = "lbry")]
+            lbry_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
             // -- Add value here.
             #[cfg(test)]
             test_subscriptions: Arc::new(Mutex::new(SubscriptionList::default())),
@@ -76,6 +82,15 @@ impl AnySubscriptionList {
     #[cfg(feature = "youtube")]
     pub(crate) fn pt_subscriptions(&mut self, sub: Arc<Mutex<SubscriptionList<PTSubscription>>>) {
         self.pt_subscriptions = sub;
+    }
+
+    /// Set the wrapped [SubscriptionList] for lbry.
+    #[cfg(feature = "lbry")]
+    pub(crate) fn lbry_subscriptions(
+        &mut self,
+        sub: Arc<Mutex<SubscriptionList<LbrySubscription>>>,
+    ) {
+        self.lbry_subscriptions = sub;
     }
 
     // -- Add funtion here
@@ -98,6 +113,8 @@ impl AnySubscriptionList {
             AnySubscription::Youtube(sub) => self.yt_subscriptions.lock().unwrap().add(sub),
             #[cfg(feature = "peertube")]
             AnySubscription::Peertube(sub) => self.pt_subscriptions.lock().unwrap().add(sub),
+            #[cfg(feature = "lbry")]
+            AnySubscription::Lbry(sub) => self.lbry_subscriptions.lock().unwrap().add(sub),
             // -- Add case here.
             #[cfg(test)]
             AnySubscription::Test(sub) => self.test_subscriptions.lock().unwrap().add(sub),
@@ -114,6 +131,8 @@ impl AnySubscriptionList {
             AnySubscription::Youtube(sub) => self.yt_subscriptions.lock().unwrap().remove(sub),
             #[cfg(feature = "peertube")]
             AnySubscription::Peertube(sub) => self.pt_subscriptions.lock().unwrap().remove(sub),
+            #[cfg(feature = "lbry")]
+            AnySubscription::Lbry(sub) => self.lbry_subscriptions.lock().unwrap().remove(sub),
             // -- Add case here.
             #[cfg(test)]
             AnySubscription::Test(sub) => self.test_subscriptions.lock().unwrap().remove(sub),
@@ -140,6 +159,17 @@ impl AnySubscriptionList {
         vec.append(
             &mut self
                 .pt_subscriptions
+                .lock()
+                .unwrap()
+                .subscriptions()
+                .into_iter()
+                .map(|s| s.into())
+                .collect::<Vec<AnySubscription>>(),
+        );
+        #[cfg(feature = "lbry")]
+        vec.append(
+            &mut self
+                .lbry_subscriptions
                 .lock()
                 .unwrap()
                 .subscriptions()

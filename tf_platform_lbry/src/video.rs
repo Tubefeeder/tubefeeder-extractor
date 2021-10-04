@@ -23,24 +23,24 @@ use async_trait::async_trait;
 use gdk_pixbuf::Pixbuf;
 use gio::{MemoryInputStream, NONE_CANCELLABLE};
 
-use crate::PTSubscription;
+use crate::LbrySubscription;
 use tf_utils::rss::Item;
 
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub struct PTVideo {
+pub struct LbryVideo {
     pub(crate) url: String,
     pub(crate) title: String,
     pub(crate) uploaded: chrono::NaiveDateTime,
-    pub(crate) subscription: PTSubscription,
+    pub(crate) subscription: LbrySubscription,
     pub(crate) thumbnail_url: String,
 }
 
-impl PTVideo {
+impl LbryVideo {
     pub fn new<T: AsRef<str>>(
         url: T,
         title: T,
         uploaded: chrono::NaiveDateTime,
-        subscription: PTSubscription,
+        subscription: LbrySubscription,
         thumbnail_url: T,
     ) -> Self {
         Self {
@@ -58,8 +58,8 @@ impl PTVideo {
 }
 
 #[async_trait]
-impl tf_core::Video for PTVideo {
-    type Subscription = PTSubscription;
+impl tf_core::Video for LbryVideo {
+    type Subscription = LbrySubscription;
 
     fn url(&self) -> String {
         self.url.clone()
@@ -84,16 +84,14 @@ impl tf_core::Video for PTVideo {
         width: i32,
         height: i32,
     ) {
-        log::debug!("Getting thumbnail for peertube video {}", self.title);
+        log::debug!("Getting thumbnail for lbry video {}", self.title);
+        log::debug!("Get from url {}", self.thumbnail_url);
         let response = client.get(&self.thumbnail_url).send().await;
-        log::debug!(
-            "Got response for thumbnail for peertube video {}",
-            self.title
-        );
+        log::debug!("Got response for thumbnail for lbry video {}", self.title);
 
         if response.is_err() {
             log::debug!(
-                "Failed getting thumbnail for peertube video {}, use default",
+                "Failed getting thumbnail for lbry video {}, use default",
                 self.title
             );
             self.default_thumbnail(filename, width, height);
@@ -104,7 +102,7 @@ impl tf_core::Video for PTVideo {
 
         if parsed.is_err() {
             log::debug!(
-                "Failed getting thumbnail for peertube video {}, use default",
+                "Failed getting thumbnail for lbry video {}, use default",
                 self.title
             );
             self.default_thumbnail(filename, width, height);
@@ -117,10 +115,7 @@ impl tf_core::Video for PTVideo {
 
         let stream = MemoryInputStream::from_bytes(&glib_bytes);
 
-        log::debug!(
-            "Finished Getting thumbnail for peertube video {}",
-            self.title
-        );
+        log::debug!("Finished Getting thumbnail for lbry video {}", self.title);
         let pixbuf = Pixbuf::from_stream_at_scale(&stream, width, height, true, NONE_CANCELLABLE);
         if let Ok(pixbuf) = pixbuf {
             let _ = pixbuf.savev(filename, "png", &[]);
@@ -130,14 +125,14 @@ impl tf_core::Video for PTVideo {
     }
 }
 
-impl PTVideo {
-    pub(crate) fn from_item_and_sub(i: Item, sub: PTSubscription) -> Self {
+impl LbryVideo {
+    pub(crate) fn from_item_and_sub(i: Item, sub: LbrySubscription) -> Self {
         Self {
-            title: i.media_title,
+            title: i.itunes_title,
             url: i.link,
             uploaded: i.pub_date,
             subscription: sub,
-            thumbnail_url: i.media_thumbnail.url,
+            thumbnail_url: i.itunes_image.href,
         }
     }
 }

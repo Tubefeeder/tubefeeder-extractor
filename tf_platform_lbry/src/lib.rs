@@ -20,5 +20,5 @@
 mod subscription;
 mod video;
 
-pub use subscription::PTSubscription;
-pub use video::PTVideo;
+pub use subscription::LbrySubscription;
+pub use video::LbryVideo;

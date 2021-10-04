@@ -20,37 +20,56 @@
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-pub(crate) struct Rss {
-    pub(crate) channel: Channel,
+pub struct Rss {
+    pub channel: Channel,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct Channel {
-    pub(crate) title: String,
+pub struct Channel {
+    pub title: String,
+    #[serde(rename = "itunes/author")]
+    #[serde(default)]
+    pub itunes_author: String,
     #[serde(rename = "item")]
-    pub(crate) items: Vec<Item>,
+    pub items: Vec<Item>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct Item {
+pub struct Item {
     #[serde(rename = "media/title")]
-    pub(crate) title: String,
-    pub(crate) link: String,
-    #[serde(with = "peertube_date_format")]
-    pub(crate) pub_date: chrono::NaiveDateTime,
+    #[serde(default)]
+    pub media_title: String,
+    #[serde(rename = "itunes/title")]
+    #[serde(default)]
+    pub itunes_title: String,
+
+    pub link: String,
+    #[serde(with = "rss_date_format")]
+    pub pub_date: chrono::NaiveDateTime,
+
     #[serde(rename = "media/thumbnail")]
-    pub(crate) thumbnail: Thumbnail,
+    #[serde(default)]
+    pub media_thumbnail: MediaThumbnail,
+    #[serde(rename = "itunes/image")]
+    #[serde(default)]
+    pub itunes_image: ItunesImage,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct Thumbnail {
-    pub(crate) url: String,
+pub struct MediaThumbnail {
+    pub url: String,
 }
 
-mod peertube_date_format {
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ItunesImage {
+    pub href: String,
+}
+
+mod rss_date_format {
     use chrono::NaiveDateTime;
     use serde::{self, Deserialize, Deserializer};
 
