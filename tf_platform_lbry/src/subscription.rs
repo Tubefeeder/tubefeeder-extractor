@@ -17,8 +17,8 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use tf_core::GeneratorWithClient;
-use tf_utils::parse_rss_from_url;
+use tf_core::{ErrorStore, GeneratorWithClient, Video};
+use tf_utils::rss::{RssExtractor, RssExtractorWrapper, WithName};
 
 use crate::LbryVideo;
 
@@ -38,10 +38,7 @@ impl LbrySubscription {
         }
     }
 
-    pub fn new_with_name<S1: AsRef<str>, S2: AsRef<str>>(
-        id: S1,
-        name: S2,
-    ) -> Self {
+    pub fn new_with_name<S1: AsRef<str>, S2: AsRef<str>>(id: S1, name: S2) -> Self {
         Self {
             id: id.as_ref().to_owned(),
             name: Some(name.as_ref().to_owned()),
@@ -54,26 +51,28 @@ impl LbrySubscription {
 
     /// Try to get the channel name from the channel.
     pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
-        let rss_res = parse_rss_from_url(&self.feed_url(), client).await;
-        if let Ok(rss) = rss_res {
-            Some(rss.channel.itunes_author)
+        let errors = ErrorStore::new();
+        let video_res = self.generate_with_client(&errors, client).await.next();
+        if let Some(video) = video_res {
+            video.subscription().name
         } else {
             None
         }
     }
+}
 
+impl WithName for LbrySubscription {
     fn with_name<S: AsRef<str>>(&self, name: S) -> Self {
         Self {
             id: self.id.clone(),
             name: Some(name.as_ref().to_owned()),
         }
     }
+}
 
+impl RssExtractor for LbrySubscription {
     fn feed_url(&self) -> String {
-        format!(
-            "https://odysee.com/$/rss/{}",
-            self.id
-        )
+        format!("https://odysee.com/$/rss/{}", self.id)
     }
 }
 
@@ -102,23 +101,8 @@ impl GeneratorWithClient for LbrySubscription {
         errors: &tf_core::ErrorStore,
         client: &reqwest::Client,
     ) -> Self::Iterator {
-        let rss_res = parse_rss_from_url(&self.feed_url(), client).await;
-
-        if rss_res.is_err() {
-            errors.add(rss_res.err().unwrap());
-            return vec![].into_iter();
-        }
-
-        let rss = rss_res.unwrap();
-
-        let name = rss.channel.itunes_author;
-        let items = rss.channel.items;
-
-        let items_pt_video: Vec<LbryVideo> = items
-            .into_iter()
-            .map(|i| LbryVideo::from_item_and_sub(i, self.with_name(&name)))
-            .collect();
-
-        items_pt_video.into_iter()
+        RssExtractorWrapper::<Self>::from(self)
+            .generate_with_client(errors, client)
+            .await
     }
 }

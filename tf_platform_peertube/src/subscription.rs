@@ -17,8 +17,8 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use tf_core::GeneratorWithClient;
-use tf_utils::parse_rss_from_url;
+use tf_core::{ErrorStore, GeneratorWithClient, Video};
+use tf_utils::rss::{RssExtractor, RssExtractorWrapper, WithName};
 
 use crate::PTVideo;
 
@@ -70,14 +70,17 @@ impl PTSubscription {
 
     /// Try to get the channel name from the channel.
     pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
-        let rss_res = parse_rss_from_url(&self.feed_url(), client).await;
-        if let Ok(rss) = rss_res {
-            Some(rss.channel.title)
+        let errors = ErrorStore::new();
+        let video_res = self.generate_with_client(&errors, client).await.next();
+        if let Some(video) = video_res {
+            video.subscription().name
         } else {
             None
         }
     }
+}
 
+impl WithName for PTSubscription {
     fn with_name<S: AsRef<str>>(&self, name: S) -> Self {
         Self {
             id: self.id.clone(),
@@ -85,7 +88,9 @@ impl PTSubscription {
             name: Some(name.as_ref().to_owned()),
         }
     }
+}
 
+impl RssExtractor for PTSubscription {
     fn feed_url(&self) -> String {
         format!(
             "{}/feeds/videos.xml?videoChannelName={}",
@@ -119,23 +124,8 @@ impl GeneratorWithClient for PTSubscription {
         errors: &tf_core::ErrorStore,
         client: &reqwest::Client,
     ) -> Self::Iterator {
-        let rss_res = parse_rss_from_url(&self.feed_url(), client).await;
-
-        if rss_res.is_err() {
-            errors.add(rss_res.err().unwrap());
-            return vec![].into_iter();
-        }
-
-        let rss = rss_res.unwrap();
-
-        let name = rss.channel.title;
-        let items = rss.channel.items;
-
-        let items_pt_video: Vec<PTVideo> = items
-            .into_iter()
-            .map(|i| PTVideo::from_item_and_sub(i, self.with_name(&name)))
-            .collect();
-
-        items_pt_video.into_iter()
+        RssExtractorWrapper::<Self>::from(self)
+            .generate_with_client(errors, client)
+            .await
     }
 }

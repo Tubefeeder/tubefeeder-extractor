@@ -24,7 +24,7 @@ use gdk_pixbuf::Pixbuf;
 use gio::{MemoryInputStream, NONE_CANCELLABLE};
 
 use crate::PTSubscription;
-use tf_utils::rss::Item;
+use tf_utils::rss::{FromItemAndSub, Item};
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct PTVideo {
@@ -130,8 +130,8 @@ impl tf_core::Video for PTVideo {
     }
 }
 
-impl PTVideo {
-    pub(crate) fn from_item_and_sub(i: Item, sub: PTSubscription) -> Self {
+impl FromItemAndSub<PTSubscription> for PTVideo {
+    fn from_item_and_sub(i: Item, sub: PTSubscription) -> Self {
         Self {
             title: i.media_title,
             url: i.link,

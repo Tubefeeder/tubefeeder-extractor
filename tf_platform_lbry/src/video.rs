@@ -24,7 +24,7 @@ use gdk_pixbuf::Pixbuf;
 use gio::{MemoryInputStream, NONE_CANCELLABLE};
 
 use crate::LbrySubscription;
-use tf_utils::rss::Item;
+use tf_utils::rss::{FromItemAndSub, Item};
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct LbryVideo {
@@ -125,8 +125,8 @@ impl tf_core::Video for LbryVideo {
     }
 }
 
-impl LbryVideo {
-    pub(crate) fn from_item_and_sub(i: Item, sub: LbrySubscription) -> Self {
+impl FromItemAndSub<LbrySubscription> for LbryVideo {
+    fn from_item_and_sub(i: Item, sub: LbrySubscription) -> Self {
         Self {
             title: i.itunes_title,
             url: i.link,
