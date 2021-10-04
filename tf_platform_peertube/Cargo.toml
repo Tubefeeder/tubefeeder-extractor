@@ -1,0 +1,25 @@
+[package]
+name = "tf_platform_peertube"
+version = "0.0.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tf_core = { version = "0.1.0", path = "../tf_core" }
+
+serde = { version = "^1.0", features = [ "derive" ] }
+quick-xml = { version = "^0.22", features = [ "serde" ] }
+chrono = { version = "^0.4", features = [ "serde" ] }
+
+async-trait = "^0.1"
+reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
+tokio = { version = "^1.9", features = [ "macros", "rt-multi-thread" ] }
+
+log = "^0.4"
+gdk-pixbuf = "^0.14"
+glib = "^0.14"
+gio = "^0.14"
+
+[dev-dependencies]
+env_logger =  "^0.9"

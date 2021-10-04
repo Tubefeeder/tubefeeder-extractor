@@ -6,5 +6,6 @@ members = [
     "tf_observer",
     "tf_playlist",
     "tf_platform_youtube",
+    "tf_platform_peertube",
     "tf_platform_test"
 ]

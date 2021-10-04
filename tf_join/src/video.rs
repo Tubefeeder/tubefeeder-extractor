@@ -38,6 +38,9 @@ const DATE_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 pub enum AnyVideo {
     #[cfg(feature = "youtube")]
     Youtube(Arc<Mutex<ExpandedVideo<tf_yt::YTVideo>>>),
+    #[cfg(feature = "peertube")]
+    Peertube(Arc<Mutex<ExpandedVideo<tf_pt::PTVideo>>>),
+    // -- Add new value here.
     #[cfg(test)]
     Test(Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>),
 }
@@ -47,6 +50,9 @@ impl std::hash::Hash for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(v) => v.lock().unwrap().hash(state),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(v) => v.lock().unwrap().hash(state),
+            // -- Add new value here.
             #[cfg(test)]
             AnyVideo::Test(v) => v.lock().unwrap().hash(state),
         }
@@ -64,6 +70,15 @@ impl std::cmp::PartialEq for AnyVideo {
                     v1.lock().unwrap().eq(&v2.lock().unwrap())
                 }
             }
+            #[cfg(feature = "peertube")]
+            (AnyVideo::Peertube(v1), AnyVideo::Peertube(v2)) => {
+                if Arc::ptr_eq(v1, v2) {
+                    true
+                } else {
+                    v1.lock().unwrap().eq(&v2.lock().unwrap())
+                }
+            }
+            // -- Add new value here.
             #[cfg(test)]
             (AnyVideo::Test(v1), AnyVideo::Test(v2)) => {
                 if Arc::ptr_eq(v1, v2) {
@@ -88,6 +103,9 @@ impl Video for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().url(),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().url(),
+            // -- Add new value here.
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().url(),
         }
@@ -97,6 +115,9 @@ impl Video for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().title(),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().title(),
+            // -- Add new value here.
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().title(),
         }
@@ -106,6 +127,9 @@ impl Video for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().uploaded(),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().uploaded(),
+            // -- Add new value here.
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().uploaded(),
         }
@@ -115,6 +139,9 @@ impl Video for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().subscription().into(),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().subscription().into(),
+            // -- Add new value here.
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().subscription().into(),
         }
@@ -134,6 +161,13 @@ impl Video for AnyVideo {
                 v.thumbnail_with_client(client, filename, width, height)
                     .await
             }
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => {
+                let v = pt.lock().unwrap().clone();
+                v.thumbnail_with_client(client, filename, width, height)
+                    .await
+            }
+            // -- Add new value here
             #[cfg(test)]
             AnyVideo::Test(test) => {
                 let v = test.lock().unwrap().clone();
@@ -150,6 +184,9 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().play(),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().play(),
+            // -- Add new value here
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().play(),
         }
@@ -160,6 +197,9 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().stop(),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().stop(),
+            // -- Add new value here
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().stop(),
         }
@@ -170,6 +210,9 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().playing(),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().playing(),
+            // -- Add new value here
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().playing(),
         }
@@ -180,6 +223,9 @@ impl AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(_yt) => Platform::Youtube,
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(_pt) => Platform::Peertube,
+            // -- Add new value here
             #[cfg(test)]
             AnyVideo::Test(_test) => Platform::Test,
         }
@@ -194,6 +240,9 @@ impl Observable<tf_core::VideoEvent> for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().attach(observer),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().attach(observer),
+            // -- Add new value here.
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().attach(observer),
         }
@@ -206,6 +255,9 @@ impl Observable<tf_core::VideoEvent> for AnyVideo {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => yt.lock().unwrap().detach(observer),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().detach(observer),
+            // -- Add new value here.
             #[cfg(test)]
             AnyVideo::Test(test) => test.lock().unwrap().detach(observer),
         }
@@ -243,6 +295,48 @@ impl TryFrom<Vec<String>> for AnyVideo {
                     _ => Err(()),
                 }
             }
+            #[cfg(feature = "peertube")]
+            Some(Ok(Platform::Peertube)) => {
+                let url_opt = value.get(1);
+                let title = value.get(2);
+                let uploaded = value.get(3);
+                let sub_name = value.get(4);
+                let sub_id = value.get(5);
+                let sub_base_url = value.get(6);
+                let thumbnail_url = value.get(7);
+                match (
+                    url_opt,
+                    title,
+                    uploaded,
+                    sub_name,
+                    sub_id,
+                    sub_base_url,
+                    thumbnail_url,
+                ) {
+                    (
+                        Some(url),
+                        Some(tit),
+                        Some(upl),
+                        Some(sub_n),
+                        Some(sub_i),
+                        Some(sub_u),
+                        Some(thu),
+                    ) => {
+                        let upl_date = chrono::NaiveDateTime::parse_from_str(upl, DATE_FORMAT);
+                        if let Ok(upl) = upl_date {
+                            let sub = tf_pt::PTSubscription::new_with_name(sub_u, sub_i, sub_n);
+                            Ok(Arc::new(Mutex::new(ExpandedVideo::from(tf_pt::PTVideo::new(
+                                url, tit, upl, sub, thu,
+                            ))))
+                            .into())
+                        } else {
+                            Err(())
+                        }
+                    }
+                    _ => Err(()),
+                }
+            }
+            // -- Add value here
             #[cfg(test)]
             Some(Ok(Platform::Test)) => {
                 let title = value.get(1);
@@ -275,6 +369,19 @@ impl From<AnyVideo> for Vec<String> {
                 result.push(sub.id());
                 result.push(v.internal().thumbnail_url());
             }
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(v_arc) => {
+                let v = v_arc.lock().unwrap();
+                result.push(v.url());
+                result.push(v.title());
+                result.push(v.uploaded().format(DATE_FORMAT).to_string());
+                let sub = v.subscription();
+                result.push(sub.name().unwrap_or_else(|| "".to_string()));
+                result.push(sub.id());
+                result.push(sub.base_url());
+                result.push(v.internal().thumbnail_url());
+            }
+            // -- Add case here.
             #[cfg(test)]
             AnyVideo::Test(v_arc) => {
                 let v = v_arc.lock().unwrap();
@@ -293,6 +400,15 @@ impl From<Arc<Mutex<ExpandedVideo<tf_yt::YTVideo>>>> for AnyVideo {
         AnyVideo::Youtube(v)
     }
 }
+
+#[cfg(feature = "peertube")]
+impl From<Arc<Mutex<ExpandedVideo<tf_pt::PTVideo>>>> for AnyVideo {
+    fn from(v: Arc<Mutex<ExpandedVideo<tf_pt::PTVideo>>>) -> Self {
+        AnyVideo::Peertube(v)
+    }
+}
+
+// -- Add case here.
 
 #[cfg(test)]
 impl From<Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>> for AnyVideo {
