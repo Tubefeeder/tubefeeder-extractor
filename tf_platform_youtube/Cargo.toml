@@ -13,7 +13,7 @@ keywords = [ "tubefeeder" ]
 [dependencies]
 tf_core = { package = "tf_core", path = "../tf_core" }
 
-piped = { package = "piped", path = "../../piped-rust-sdk/piped" }
+piped = { package = "piped", git = "https://github.com/Tubefeeder/piped-rust-sdk.git", branch = "cleanup" }
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
