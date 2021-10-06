@@ -20,8 +20,10 @@
 use crate::video::YTVideo;
 
 use async_trait::async_trait;
-use rusty_pipe::extractors::YTChannelExtractor;
+use piped::PipedClient;
 use tf_core::{Error, ErrorStore, GeneratorWithClient, NetworkError, ParseError, Subscription};
+
+const PIPED_API_URL: &'static str = "https://pipedapi.kavin.rocks";
 
 /// A [`YTSubscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -51,9 +53,8 @@ impl YTSubscription {
     /// Try to interpret the given string as a id first, if this fails try
     /// to interpret it as a name.
     pub async fn from_id_or_name(id_or_name: &str) -> Result<Self, Error> {
-        let downloader = crate::Downloader(reqwest::Client::new());
-        let extractor = YTChannelExtractor::new(downloader, id_or_name, None).await;
-        if extractor.is_ok() {
+        let piped = PipedClient::new(&reqwest::Client::new(), PIPED_API_URL);
+        if let Ok(_channel) = piped.channel_from_id(id_or_name).await {
             Ok(Self::new(id_or_name))
         } else {
             Self::from_name(id_or_name).await
@@ -102,10 +103,9 @@ impl YTSubscription {
 
     /// Try to get the channel name from the channel id.
     pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
-        let downloader = crate::Downloader(client.clone());
-        let extractor_res = YTChannelExtractor::new(downloader, &self.id, None).await;
-        if let Ok(extractor) = extractor_res {
-            extractor.name().ok()
+        let piped = PipedClient::new(&client, PIPED_API_URL);
+        if let Ok(channel) = piped.channel_from_id(&self.id).await {
+            Some(channel.name)
         } else {
             None
         }
@@ -144,37 +144,38 @@ impl GeneratorWithClient for YTSubscription {
         errors: &ErrorStore,
         client: &reqwest::Client,
     ) -> Self::Iterator {
-        let downloader = crate::Downloader(client.clone());
         log::debug!(
             "Generating YT videos from channel {}",
             self.name().unwrap_or_else(|| self.id())
         );
 
-        let channel_extractor_res =
-            YTChannelExtractor::new(downloader.clone(), &self.id, None).await;
+        let piped = PipedClient::new(client, PIPED_API_URL);
+        let channel_res = piped.channel_from_id(self.id.clone()).await;
 
-        if channel_extractor_res.is_err() {
-            // TODO: Url?
-            errors.add(NetworkError("Youtube".to_string()).into());
+        if let Err(e) = &channel_res {
+            log::error!("Error generating youtube videos from subscription {}", self);
+            errors.add(piped_to_tubefeeder_error(e));
             return vec![].into_iter();
         }
 
-        let channel_extractor = channel_extractor_res.unwrap();
+        let channel = channel_res.unwrap();
+        let videos = channel.related_streams;
+        let name = channel.name;
 
-        let videos_res = channel_extractor.videos();
-        let name = channel_extractor.name().unwrap_or_else(|_| "".to_string());
+        Box::new(
+            videos
+                .into_iter()
+                .map(|v| YTVideo::from_related_stream(errors, v, self.with_name(&name))),
+        )
+        .collect::<Vec<YTVideo>>()
+        .into_iter()
+    }
+}
 
-        if videos_res.is_err() {
-            // TODO: Cause?
-            errors.add(ParseError("Youtube".to_string()).into());
-            return vec![].into_iter();
-        }
-
-        videos_res
-            .unwrap()
-            .into_iter()
-            .map(|v| YTVideo::from_extractor(errors, v, self.with_name(&name)))
-            .collect::<Vec<YTVideo>>()
-            .into_iter()
+fn piped_to_tubefeeder_error(error: &piped::Error) -> tf_core::Error {
+    match error {
+        piped::Error::Network(e) => tf_core::NetworkError(e.to_string()).into(),
+        piped::Error::ParseResponse(e) => tf_core::ParseError(e.to_string()).into(),
+        piped::Error::Parseurl(e) => tf_core::ParseError(e.to_string()).into(),
     }
 }

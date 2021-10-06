@@ -13,10 +13,11 @@ keywords = [ "tubefeeder" ]
 [dependencies]
 tf_core = { package = "tf_core", path = "../tf_core" }
 
-rusty_pipe = { git = "https://github.com/Tubefeeder/rusty_pipe.git", tag = "0.1.0" }
+piped = { package = "piped", git = "https://github.com/Tubefeeder/piped-rust-sdk.git", branch = "cleanup" }
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
+parse_duration = "2.1.1"
 futures = "^0.3"
 regex = "^1.5"
 tokio = { version = "^1.9", features = [ "macros" ] }
@@ -26,6 +27,9 @@ serde = { version = "^1.0", features = [ "derive" ] }
 log = "^0.4"
 gdk-pixbuf = "^0.14"
 glib = "^0.14"
+
+image = "^0.23"
+webp = "^0.2"
 
 [dev-dependencies]
 mockall = "^0.10"

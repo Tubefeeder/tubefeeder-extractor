@@ -17,15 +17,17 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::path::Path;
+use std::{convert::TryInto, path::Path};
 
 use crate::subscription::YTSubscription;
 
 use async_trait::async_trait;
-use gdk_pixbuf::gio::{MemoryInputStream, NONE_CANCELLABLE};
-use gdk_pixbuf::Pixbuf;
-use rusty_pipe::extractors::YTStreamInfoItemExtractor;
+use piped::RelatedStream;
 use tf_core::ErrorStore;
+
+const YOUTUBE_URL: &'static str = "https://www.youtube.com";
+const USER_AGENT: &'static str =
+    "Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0";
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct YTVideo {
@@ -86,14 +88,19 @@ impl tf_core::Video for YTVideo {
         height: i32,
     ) {
         log::debug!("Getting thumbnail for youtube video {}", self.title);
-        let response = client.get(&self.thumbnail_url).send().await;
+        log::debug!("Getting thumbnail for youtube url {}", self.thumbnail_url);
+        let response = client
+            .get(&self.thumbnail_url)
+            .header("User-Agent", USER_AGENT)
+            .send()
+            .await;
         log::debug!(
             "Got response for thumbnail for youtube video {}",
             self.title
         );
 
         if response.is_err() {
-            log::debug!(
+            log::error!(
                 "Failed getting thumbnail for youtube video {}, use default",
                 self.title
             );
@@ -104,7 +111,7 @@ impl tf_core::Video for YTVideo {
         let parsed = response.unwrap().bytes().await;
 
         if parsed.is_err() {
-            log::debug!(
+            log::error!(
                 "Failed getting thumbnail for youtube video {}, use default",
                 self.title
             );
@@ -114,17 +121,21 @@ impl tf_core::Video for YTVideo {
 
         let parsed_bytes = parsed.unwrap();
 
-        let glib_bytes = glib::Bytes::from(&parsed_bytes.to_vec());
+        let webp_decoder = webp::Decoder::new(&parsed_bytes);
+        let webp_image = webp_decoder.decode();
+        let dynamic_image = webp_image.map(|i| i.to_image());
 
-        let stream = MemoryInputStream::from_bytes(&glib_bytes);
+        let rgba_image = dynamic_image.map(|i| {
+            i.resize(
+                width.try_into().unwrap_or(0),
+                height.try_into().unwrap_or(0),
+                image::imageops::FilterType::Triangle,
+            )
+            .to_rgba8()
+        });
 
-        log::debug!(
-            "Finished Getting thumbnail for youtube video {}",
-            self.title
-        );
-        let pixbuf = Pixbuf::from_stream_at_scale(&stream, width, height, true, NONE_CANCELLABLE);
-        if let Ok(pixbuf) = pixbuf {
-            let _ = pixbuf.savev(filename, "png", &[]);
+        if let Some(image) = rgba_image {
+            let _ = image.save(filename);
         } else {
             self.default_thumbnail(filename, width, height);
         }
@@ -132,23 +143,31 @@ impl tf_core::Video for YTVideo {
 }
 
 impl YTVideo {
-    pub(crate) fn from_extractor(
+    pub(crate) fn from_related_stream(
         _errors: &ErrorStore,
-        v: YTStreamInfoItemExtractor,
+        v: RelatedStream,
         subscription: YTSubscription,
     ) -> Self {
         YTVideo {
-            url: v.url().unwrap_or_else(|_| "".to_string()),
-            title: v.name().unwrap_or_else(|_| "".to_string()),
+            url: format!("{}/{}", YOUTUBE_URL, v.url),
+            title: v.title,
             subscription,
             uploaded: v
-                .upload_date()
-                .unwrap_or_else(|_| chrono::NaiveDate::from_num_days_from_ce(0).and_hms(0, 0, 0)),
-            thumbnail_url: v
-                .thumbnails()
-                .map(|v| v.get(0).map(|t| t.url.clone()))
+                .uploaded_date
+                .map(|d| timeago_parser(d).ok())
                 .unwrap_or(None)
-                .unwrap_or_else(|| "".to_string()),
+                .unwrap_or(chrono::NaiveDate::from_ymd(1, 1, 1).and_hms(0, 0, 0)),
+            thumbnail_url: v.thumbnail,
         }
     }
+}
+
+// TODO: Move to util crate
+/// Parse textual upload date (e.g. `4 months ago`) to a approximate date.
+fn timeago_parser<S: AsRef<str>>(date: S) -> Result<chrono::NaiveDateTime, tf_core::ParseError> {
+    let duration_ago = parse_duration::parse(date.as_ref())
+        .map_err(|_| tf_core::ParseError("Parsing date".to_string()))?;
+    return Ok(
+        chrono::Local::now().naive_local() - chrono::Duration::from_std(duration_ago).unwrap()
+    );
 }
