@@ -17,12 +17,10 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::path::Path;
-
 use crate::Subscription;
 
 use async_trait::async_trait;
-use gdk_pixbuf::{Colorspace, Pixbuf};
+use image::DynamicImage;
 
 #[cfg(test)]
 use {crate::mock::MockSubscription, mockall::predicate::*, mockall::*};
@@ -50,19 +48,12 @@ pub trait Video:
     /// The url of the [Videos](Video) thumbnail.
     fn thumbnail_url(&self) -> String;
 
-    /// Save the thumbnail of the [Video] into a file at the given path.
+    /// Get the thumbnail of the [Video].
     ///
-    /// The image should be fetched using the given [reqwest::Client] and it should
-    /// be saved with the given width and height.
+    /// The image should be fetched using the given [reqwest::Client].
     ///
-    /// When not overwritten it will default to create a transparent picture.
-    async fn thumbnail_with_client<P: AsRef<Path> + Send>(
-        &self,
-        client: &reqwest::Client,
-        filename: P,
-        width: i32,
-        height: i32,
-    ) {
+    /// When not overwritten it will fetch the thumbnail from [Video::thumbnail_url] and guess the format.
+    async fn thumbnail_with_client(&self, client: &reqwest::Client) -> image::DynamicImage {
         let thumbnail_url = self.thumbnail_url();
         log::debug!("Getting thumbnail from url {}", thumbnail_url);
         let response = client.get(&thumbnail_url).send().await;
@@ -72,8 +63,7 @@ pub trait Video:
                 "Failed getting thumbnail for url {}, use default",
                 thumbnail_url
             );
-            self.default_thumbnail(filename, width, height);
-            return;
+            return self.default_thumbnail();
         }
 
         let parsed = response.unwrap().bytes().await;
@@ -83,42 +73,38 @@ pub trait Video:
                 "Failed getting thumbnail for url {}, use default",
                 thumbnail_url
             );
-            self.default_thumbnail(filename, width, height);
-            return;
+            return self.default_thumbnail();
         }
 
         let parsed_bytes = parsed.unwrap();
 
-        let glib_bytes = glib::Bytes::from(&parsed_bytes.to_vec());
-
-        let stream = gio::MemoryInputStream::from_bytes(&glib_bytes);
-
-        let pixbuf =
-            Pixbuf::from_stream_at_scale(&stream, width, height, true, gio::NONE_CANCELLABLE);
-        if let Ok(pixbuf) = pixbuf {
-            let _ = pixbuf.savev(filename, "png", &[]);
+        if let Some(image) = <Self as Video>::convert_image(&parsed_bytes) {
+            image
         } else {
-            self.default_thumbnail(filename, width, height);
+            self.default_thumbnail()
         }
     }
 
-    /// Save the default image similar to [Video::thumbnail_with_client].
-    fn default_thumbnail<P: AsRef<Path>>(&self, filename: P, width: i32, height: i32) {
-        let pixbuf =
-            Pixbuf::new(Colorspace::Rgb, true, 8, width, height).expect("Could not create empty");
-        pixbuf.fill(0);
-        let _ = pixbuf.savev(filename, "png", &[]);
+    /// Try to convert image bytes into a usable [DynamicImage].
+    ///
+    /// By default the format will be guessed.
+    fn convert_image(data: &[u8]) -> Option<DynamicImage> {
+        image::load_from_memory(&data).ok()
     }
 
-    /// Save the thumbnail of the [Video] into a file at the given path.
+    /// Get the default thumbnail, if not overwritten a transparent 1 by 1 pixel image.
+    fn default_thumbnail(&self) -> DynamicImage {
+        DynamicImage::new_rgba8(1, 1)
+    }
+
+    /// Get the thumbnail of the [Video].
     ///
     /// The image will be fetched using [reqwest::Client::new]. It will
     /// be saved with the given width and height.
     ///
     /// When not overwritten it will default to create a transparent picture.
-    async fn thumbnail<P: AsRef<Path> + Send>(&self, filename: P, width: i32, height: i32) {
-        self.thumbnail_with_client(&reqwest::Client::new(), filename, width, height)
-            .await
+    async fn thumbnail(&self) -> DynamicImage {
+        self.thumbnail_with_client(&reqwest::Client::new()).await
     }
 }
 

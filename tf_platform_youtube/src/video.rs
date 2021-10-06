@@ -17,8 +17,6 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::{convert::TryInto, path::Path};
-
 use crate::subscription::YTSubscription;
 
 use async_trait::async_trait;
@@ -26,8 +24,6 @@ use piped::RelatedStream;
 use tf_core::ErrorStore;
 
 const YOUTUBE_URL: &'static str = "https://www.youtube.com";
-const USER_AGENT: &'static str =
-    "Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0";
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct YTVideo {
@@ -80,62 +76,11 @@ impl tf_core::Video for YTVideo {
         self.uploaded
     }
 
-    /// This needs special treatment as the url given from piped uses webp as the image format and GdkPixbuf does not support webp.
-    /// Furthermore piped need a user agent set to query the image.
-    async fn thumbnail_with_client<P: AsRef<Path> + Send>(
-        &self,
-        client: &reqwest::Client,
-        filename: P,
-        width: i32,
-        height: i32,
-    ) {
-        log::debug!("Getting thumbnail for youtube url {}", self.thumbnail_url);
-        let response = client
-            .get(&self.thumbnail_url)
-            .header("User-Agent", USER_AGENT)
-            .send()
-            .await;
-
-        if response.is_err() {
-            log::error!(
-                "Failed getting thumbnail for youtube video {}, use default",
-                self.title
-            );
-            self.default_thumbnail(filename, width, height);
-            return;
-        }
-
-        let parsed = response.unwrap().bytes().await;
-
-        if parsed.is_err() {
-            log::error!(
-                "Failed getting thumbnail for youtube video {}, use default",
-                self.title
-            );
-            self.default_thumbnail(filename, width, height);
-            return;
-        }
-
-        let parsed_bytes = parsed.unwrap();
-
-        let webp_decoder = webp::Decoder::new(&parsed_bytes);
+    /// The default `image`-crate currently only supports webp as grayscale, therefore this has to be overwritten.
+    fn convert_image(data: &[u8]) -> Option<image::DynamicImage> {
+        let webp_decoder = webp::Decoder::new(&data);
         let webp_image = webp_decoder.decode();
-        let dynamic_image = webp_image.map(|i| i.to_image());
-
-        let rgba_image = dynamic_image.map(|i| {
-            i.resize(
-                width.try_into().unwrap_or(0),
-                height.try_into().unwrap_or(0),
-                image::imageops::FilterType::Triangle,
-            )
-            .to_rgba8()
-        });
-
-        if let Some(image) = rgba_image {
-            let _ = image.save(filename);
-        } else {
-            self.default_thumbnail(filename, width, height);
-        }
+        webp_image.map(|i| i.to_image())
     }
 }
 

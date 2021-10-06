@@ -19,7 +19,6 @@
 
 use std::{
     convert::TryFrom,
-    path::Path,
     str::FromStr,
     sync::{Arc, Mutex},
 };
@@ -181,38 +180,28 @@ impl Video for AnyVideo {
         }
     }
 
-    async fn thumbnail_with_client<P: AsRef<Path> + Send>(
-        &self,
-        client: &reqwest::Client,
-        filename: P,
-        width: i32,
-        height: i32,
-    ) {
+    async fn thumbnail_with_client(&self, client: &reqwest::Client) -> image::DynamicImage {
         match self {
             #[cfg(feature = "youtube")]
             AnyVideo::Youtube(yt) => {
                 let v = yt.lock().unwrap().clone();
-                v.thumbnail_with_client(client, filename, width, height)
-                    .await
+                v.thumbnail_with_client(client).await
             }
             #[cfg(feature = "peertube")]
             AnyVideo::Peertube(pt) => {
                 let v = pt.lock().unwrap().clone();
-                v.thumbnail_with_client(client, filename, width, height)
-                    .await
+                v.thumbnail_with_client(client).await
             }
             #[cfg(feature = "lbry")]
             AnyVideo::Lbry(lbry) => {
                 let v = lbry.lock().unwrap().clone();
-                v.thumbnail_with_client(client, filename, width, height)
-                    .await
+                v.thumbnail_with_client(client).await
             }
             // -- Add new value here
             #[cfg(test)]
             AnyVideo::Test(test) => {
                 let v = test.lock().unwrap().clone();
-                v.thumbnail_with_client(client, filename, width, height)
-                    .await
+                v.thumbnail_with_client(client).await
             }
         }
     }

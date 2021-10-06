@@ -17,7 +17,7 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::{hash::Hash, path::Path};
+use std::hash::Hash;
 
 use async_trait::async_trait;
 
@@ -80,16 +80,8 @@ impl<V: Video> Video for ExpandedVideo<V> {
         self.video.thumbnail_url()
     }
 
-    async fn thumbnail_with_client<P: AsRef<Path> + Send>(
-        &self,
-        client: &reqwest::Client,
-        filename: P,
-        width: i32,
-        height: i32,
-    ) {
-        self.video
-            .thumbnail_with_client(client, filename, width, height)
-            .await
+    async fn thumbnail_with_client(&self, client: &reqwest::Client) -> image::DynamicImage {
+        self.video.thumbnail_with_client(client).await
     }
 }
 
