@@ -20,52 +20,33 @@
 use tf_core::{ErrorStore, GeneratorWithClient, Video};
 use tf_utils::rss::{RssExtractor, RssExtractorWrapper, WithName};
 
-use crate::PTVideo;
+use crate::LbryVideo;
 
 #[derive(Clone, Hash, PartialEq, Eq, Debug)]
-pub struct PTSubscription {
+pub struct LbrySubscription {
     id: String,
-    base_url: String,
     name: Option<String>,
 }
 
-impl PTSubscription {
-    /// Create a new peertube subscription. The base url should be the url peertube is accessible at.
-    /// The id should be in the format name@url (you will get that when copying the video channel id).
-    pub fn new<S1: AsRef<str>, S2: AsRef<str>>(base_url: S1, id: S2) -> Self {
-        // Format url to always have http(s) in the beginning and no ending /
-        let mut url = base_url.as_ref().to_owned();
-        if !url.starts_with("http") {
-            url = format!("https://{}", url);
-        }
-        if url.ends_with('/') {
-            url.pop();
-        }
+impl LbrySubscription {
+    /// Create a new lbry subscription.
+    /// The id should be in the format @name:number.
+    pub fn new<S: AsRef<str>>(id: S) -> Self {
         Self {
             id: id.as_ref().to_owned(),
-            base_url: url,
             name: None,
         }
     }
 
-    pub fn new_with_name<S1: AsRef<str>, S2: AsRef<str>, S3: AsRef<str>>(
-        base_url: S1,
-        id: S2,
-        name: S3,
-    ) -> Self {
+    pub fn new_with_name<S1: AsRef<str>, S2: AsRef<str>>(id: S1, name: S2) -> Self {
         Self {
             id: id.as_ref().to_owned(),
-            base_url: base_url.as_ref().to_owned(),
             name: Some(name.as_ref().to_owned()),
         }
     }
 
     pub fn id(&self) -> String {
         self.id.clone()
-    }
-
-    pub fn base_url(&self) -> String {
-        self.base_url.clone()
     }
 
     /// Try to get the channel name from the channel.
@@ -80,33 +61,29 @@ impl PTSubscription {
     }
 }
 
-impl WithName for PTSubscription {
+impl WithName for LbrySubscription {
     fn with_name<S: AsRef<str>>(&self, name: S) -> Self {
         Self {
             id: self.id.clone(),
-            base_url: self.base_url.clone(),
             name: Some(name.as_ref().to_owned()),
         }
     }
 }
 
-impl RssExtractor for PTSubscription {
+impl RssExtractor for LbrySubscription {
     fn feed_url(&self) -> String {
-        format!(
-            "{}/feeds/videos.xml?videoChannelName={}",
-            self.base_url, self.id
-        )
+        format!("https://odysee.com/$/rss/{}", self.id)
     }
 }
 
-impl std::fmt::Display for PTSubscription {
+impl std::fmt::Display for LbrySubscription {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name.as_ref().unwrap_or(&self.id))
     }
 }
 
-impl tf_core::Subscription for PTSubscription {
-    type Video = PTVideo;
+impl tf_core::Subscription for LbrySubscription {
+    type Video = LbryVideo;
 
     fn name(&self) -> Option<String> {
         self.name.clone()
@@ -114,10 +91,10 @@ impl tf_core::Subscription for PTSubscription {
 }
 
 #[async_trait::async_trait]
-impl GeneratorWithClient for PTSubscription {
-    type Item = PTVideo;
+impl GeneratorWithClient for LbrySubscription {
+    type Item = LbryVideo;
 
-    type Iterator = std::vec::IntoIter<PTVideo>;
+    type Iterator = std::vec::IntoIter<LbryVideo>;
 
     async fn generate_with_client(
         &self,

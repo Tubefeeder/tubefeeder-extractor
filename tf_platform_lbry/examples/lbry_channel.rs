@@ -17,8 +17,30 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod subscription;
-mod video;
+extern crate tf_platform_lbry as tf_lbry;
 
-pub use subscription::PTSubscription;
-pub use video::PTVideo;
+use std::error::Error;
+use tf_core::{ErrorStore, GeneratorWithClient, Video};
+use tf_lbry::{LbrySubscription, LbryVideo};
+
+const ID: &str = "@SomeOrdinaryGamers:a";
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
+    let sub = LbrySubscription::new(ID);
+
+    let client = reqwest::Client::new();
+    let error_store = ErrorStore::new();
+
+    let videos: Vec<LbryVideo> = sub
+        .generate_with_client(&error_store, &client)
+        .await
+        .collect();
+
+    for v in videos {
+        println!("Video {}", v.title());
+    }
+
+    Ok(())
+}

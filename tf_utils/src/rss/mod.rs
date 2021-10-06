@@ -17,8 +17,8 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod subscription;
-mod video;
+mod rss_extractor;
+mod structure;
 
-pub use subscription::PTSubscription;
-pub use video::PTVideo;
+pub use rss_extractor::*;
+pub use structure::*;

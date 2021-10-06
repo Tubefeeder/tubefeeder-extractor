@@ -17,6 +17,7 @@ tf_filter = { version = "0.1.0", path = "../tf_filter"}
 
 tf_yt = { package = "tf_platform_youtube", path = "../tf_platform_youtube", optional = true}
 tf_pt = { package = "tf_platform_peertube", path = "../tf_platform_peertube", optional = true}
+tf_lbry = { package = "tf_platform_lbry", path = "../tf_platform_lbry", optional = true}
 # -- Add dependency here.
 
 async-trait = "^0.1"
@@ -35,7 +36,8 @@ tf_test = { package = "tf_platform_test", path = "../tf_platform_test"}
 
 [features]
 # -- Add new feature into the default list.
-default = ["youtube", "peertube"]
+default = ["youtube", "peertube", "lbry"]
 youtube = ["tf_yt"]
 peertube = ["tf_pt"]
+lbry = ["tf_lbry"]
 # -- Add new feature here.
