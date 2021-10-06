@@ -2,6 +2,10 @@
 name = "tf_platform_peertube"
 version = "0.0.0"
 edition = "2018"
+license = "GPL-3.0-or-later"
+description = "The platform for peertube Tubefeeder-Extractor"
+homepage = "https://www.tubefeeder.de"
+repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,12 +17,7 @@ chrono = { version = "^0.4", features = [ "serde" ] }
 
 async-trait = "^0.1"
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
-tokio = { version = "^1.9", features = [ "macros", "rt-multi-thread" ] }
-
-log = "^0.4"
-gdk-pixbuf = "^0.14"
-glib = "^0.14"
-gio = "^0.14"
 
 [dev-dependencies]
 env_logger =  "^0.9"
+tokio = { version = "^1.9", features = [ "macros", "rt-multi-thread" ] }

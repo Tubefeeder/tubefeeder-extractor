@@ -47,6 +47,9 @@ pub trait Video:
     /// The subscription uploading the [Video].
     fn subscription(&self) -> Self::Subscription;
 
+    /// The url of the [Videos](Video) thumbnail.
+    fn thumbnail_url(&self) -> String;
+
     /// Save the thumbnail of the [Video] into a file at the given path.
     ///
     /// The image should be fetched using the given [reqwest::Client] and it should
@@ -55,12 +58,48 @@ pub trait Video:
     /// When not overwritten it will default to create a transparent picture.
     async fn thumbnail_with_client<P: AsRef<Path> + Send>(
         &self,
-        _client: &reqwest::Client,
+        client: &reqwest::Client,
         filename: P,
         width: i32,
         height: i32,
     ) {
-        self.default_thumbnail(filename, width, height);
+        let thumbnail_url = self.thumbnail_url();
+        log::debug!("Getting thumbnail from url {}", thumbnail_url);
+        let response = client.get(&thumbnail_url).send().await;
+
+        if response.is_err() {
+            log::error!(
+                "Failed getting thumbnail for url {}, use default",
+                thumbnail_url
+            );
+            self.default_thumbnail(filename, width, height);
+            return;
+        }
+
+        let parsed = response.unwrap().bytes().await;
+
+        if parsed.is_err() {
+            log::error!(
+                "Failed getting thumbnail for url {}, use default",
+                thumbnail_url
+            );
+            self.default_thumbnail(filename, width, height);
+            return;
+        }
+
+        let parsed_bytes = parsed.unwrap();
+
+        let glib_bytes = glib::Bytes::from(&parsed_bytes.to_vec());
+
+        let stream = gio::MemoryInputStream::from_bytes(&glib_bytes);
+
+        let pixbuf =
+            Pixbuf::from_stream_at_scale(&stream, width, height, true, gio::NONE_CANCELLABLE);
+        if let Ok(pixbuf) = pixbuf {
+            let _ = pixbuf.savev(filename, "png", &[]);
+        } else {
+            self.default_thumbnail(filename, width, height);
+        }
     }
 
     /// Save the default image similar to [Video::thumbnail_with_client].
@@ -98,6 +137,7 @@ mock! {
         fn title(&self) -> String;
         fn uploaded(&self) -> chrono::NaiveDateTime;
         fn subscription(&self) -> MockSubscription;
+        fn thumbnail_url(&self) -> String;
     }
 }
 

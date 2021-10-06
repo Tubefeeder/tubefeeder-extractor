@@ -2,8 +2,8 @@
 name = "tf_platform_test"
 version = "0.1.0"
 edition = "2018"
-license = "GPL-1.0-or-later"
-description = "The platform for testing Tubefeeder"
+license = "GPL-3.0-or-later"
+description = "The platform for testing Tubefeeder-Extractor"
 homepage = "https://www.tubefeeder.de"
 repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
 keywords = [ "tubefeeder" ]

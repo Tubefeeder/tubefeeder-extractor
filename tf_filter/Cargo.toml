@@ -2,8 +2,8 @@
 name = "tf_filter"
 version = "0.1.0"
 edition = "2018"
-license = "GPL-1.0-or-later"
-description = "The filter used in Tubefeeder"
+license = "GPL-3.0-or-later"
+description = "The filter used in Tubefeeder-Extractor"
 homepage = "https://www.tubefeeder.de"
 repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
 keywords = [ "tubefeeder" ]
@@ -12,5 +12,3 @@ keywords = [ "tubefeeder" ]
 
 [dependencies]
 tf_observer = { version = "0.1.0", path = "../tf_observer" }
-
-log = "^0.4"

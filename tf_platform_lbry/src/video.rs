@@ -17,11 +17,7 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::path::Path;
-
 use async_trait::async_trait;
-use gdk_pixbuf::Pixbuf;
-use gio::{MemoryInputStream, NONE_CANCELLABLE};
 
 use crate::LbrySubscription;
 use tf_utils::rss::{FromItemAndSub, Item};
@@ -51,10 +47,6 @@ impl LbryVideo {
             thumbnail_url: thumbnail_url.as_ref().to_owned(),
         }
     }
-
-    pub fn thumbnail_url(&self) -> String {
-        self.thumbnail_url.clone()
-    }
 }
 
 #[async_trait]
@@ -77,51 +69,8 @@ impl tf_core::Video for LbryVideo {
         self.subscription.clone()
     }
 
-    async fn thumbnail_with_client<P: AsRef<Path> + Send>(
-        &self,
-        client: &reqwest::Client,
-        filename: P,
-        width: i32,
-        height: i32,
-    ) {
-        log::debug!("Getting thumbnail for lbry video {}", self.title);
-        log::debug!("Get from url {}", self.thumbnail_url);
-        let response = client.get(&self.thumbnail_url).send().await;
-        log::debug!("Got response for thumbnail for lbry video {}", self.title);
-
-        if response.is_err() {
-            log::debug!(
-                "Failed getting thumbnail for lbry video {}, use default",
-                self.title
-            );
-            self.default_thumbnail(filename, width, height);
-            return;
-        }
-
-        let parsed = response.unwrap().bytes().await;
-
-        if parsed.is_err() {
-            log::debug!(
-                "Failed getting thumbnail for lbry video {}, use default",
-                self.title
-            );
-            self.default_thumbnail(filename, width, height);
-            return;
-        }
-
-        let parsed_bytes = parsed.unwrap();
-
-        let glib_bytes = glib::Bytes::from(&parsed_bytes.to_vec());
-
-        let stream = MemoryInputStream::from_bytes(&glib_bytes);
-
-        log::debug!("Finished Getting thumbnail for lbry video {}", self.title);
-        let pixbuf = Pixbuf::from_stream_at_scale(&stream, width, height, true, NONE_CANCELLABLE);
-        if let Ok(pixbuf) = pixbuf {
-            let _ = pixbuf.savev(filename, "png", &[]);
-        } else {
-            self.default_thumbnail(filename, width, height);
-        }
+    fn thumbnail_url(&self) -> String {
+        self.thumbnail_url.clone()
     }
 }
 

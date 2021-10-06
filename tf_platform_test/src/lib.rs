@@ -51,6 +51,10 @@ impl Video for TestVideo {
     fn subscription(&self) -> TestSubscription {
         self.subscription.clone()
     }
+
+    fn thumbnail_url(&self) -> String {
+        "".to_string()
+    }
 }
 
 impl TestVideo {

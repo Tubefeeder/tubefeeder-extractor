@@ -2,8 +2,8 @@
 name = "tf_observer"
 version = "0.1.0"
 edition = "2018"
-license = "GPL-1.0-or-later"
-description = "The observer pattern used in Tubefeeder"
+license = "GPL-3.0-or-later"
+description = "The observer pattern used in Tubefeeder-Extractor"
 homepage = "https://www.tubefeeder.de"
 repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
 keywords = [ "tubefeeder" ]

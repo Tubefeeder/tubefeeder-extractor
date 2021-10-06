@@ -2,7 +2,7 @@
 name = "tf_playlist"
 version = "0.1.1"
 edition = "2018"
-license = "GPL-1.0-or-later"
+license = "GPL-3.0-or-later"
 description = "The playlist feature used in Tubefeeder"
 homepage = "https://www.tubefeeder.de"
 repository = "https://github.com/Tubefeeder/tubefeeder-extractor"

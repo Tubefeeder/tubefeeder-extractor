@@ -76,6 +76,10 @@ impl<V: Video> Video for ExpandedVideo<V> {
         self.video.subscription()
     }
 
+    fn thumbnail_url(&self) -> String {
+        self.video.thumbnail_url()
+    }
+
     async fn thumbnail_with_client<P: AsRef<Path> + Send>(
         &self,
         client: &reqwest::Client,

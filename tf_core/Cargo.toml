@@ -2,7 +2,7 @@
 name = "tf_core"
 version = "0.1.0"
 edition = "2018"
-license = "GPL-1.0-or-later"
+license = "GPL-3.0-or-later"
 description = "The core part of Tubefeeder"
 homepage = "https://www.tubefeeder.de"
 repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
@@ -16,13 +16,13 @@ tf_observer = { version = "0.1.0", path = "../tf_observer" }
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
 tokio = { version = "^1.9", features = [ "macros" ] }
-quick-xml = { version = "^0.22", features = [ "serialize" ] }
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
-serde = { version = "^1.0", features = [ "derive" ] }
 futures = "^0.3"
 log = "^0.4"
 
 gdk-pixbuf = "^0.14"
+glib = "^0.14"
+gio = "^0.14"
 
 [dev-dependencies]
 mockall = "0.10.2"

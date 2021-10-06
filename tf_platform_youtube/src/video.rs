@@ -54,10 +54,6 @@ impl YTVideo {
             thumbnail_url: thumbnail_url.as_ref().to_owned(),
         }
     }
-
-    pub fn thumbnail_url(&self) -> String {
-        self.thumbnail_url.clone()
-    }
 }
 
 #[async_trait]
@@ -76,10 +72,16 @@ impl tf_core::Video for YTVideo {
         self.subscription.clone()
     }
 
+    fn thumbnail_url(&self) -> String {
+        self.thumbnail_url.clone()
+    }
+
     fn uploaded(&self) -> chrono::NaiveDateTime {
         self.uploaded
     }
 
+    /// This needs special treatment as the url given from piped uses webp as the image format and GdkPixbuf does not support webp.
+    /// Furthermore piped need a user agent set to query the image.
     async fn thumbnail_with_client<P: AsRef<Path> + Send>(
         &self,
         client: &reqwest::Client,
@@ -87,17 +89,12 @@ impl tf_core::Video for YTVideo {
         width: i32,
         height: i32,
     ) {
-        log::debug!("Getting thumbnail for youtube video {}", self.title);
         log::debug!("Getting thumbnail for youtube url {}", self.thumbnail_url);
         let response = client
             .get(&self.thumbnail_url)
             .header("User-Agent", USER_AGENT)
             .send()
             .await;
-        log::debug!(
-            "Got response for thumbnail for youtube video {}",
-            self.title
-        );
 
         if response.is_err() {
             log::error!(
@@ -154,20 +151,10 @@ impl YTVideo {
             subscription,
             uploaded: v
                 .uploaded_date
-                .map(|d| timeago_parser(d).ok())
+                .map(|d| tf_utils::timeago_parser(d).ok())
                 .unwrap_or(None)
                 .unwrap_or(chrono::NaiveDate::from_ymd(1, 1, 1).and_hms(0, 0, 0)),
             thumbnail_url: v.thumbnail,
         }
     }
-}
-
-// TODO: Move to util crate
-/// Parse textual upload date (e.g. `4 months ago`) to a approximate date.
-fn timeago_parser<S: AsRef<str>>(date: S) -> Result<chrono::NaiveDateTime, tf_core::ParseError> {
-    let duration_ago = parse_duration::parse(date.as_ref())
-        .map_err(|_| tf_core::ParseError("Parsing date".to_string()))?;
-    return Ok(
-        chrono::Local::now().naive_local() - chrono::Duration::from_std(duration_ago).unwrap()
-    );
 }

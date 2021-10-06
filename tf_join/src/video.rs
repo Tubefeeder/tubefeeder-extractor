@@ -167,6 +167,20 @@ impl Video for AnyVideo {
         }
     }
 
+    fn thumbnail_url(&self) -> String {
+        match self {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(yt) => yt.lock().unwrap().thumbnail_url(),
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(pt) => pt.lock().unwrap().thumbnail_url(),
+            #[cfg(feature = "lbry")]
+            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().thumbnail_url(),
+            // -- Add new value here.
+            #[cfg(test)]
+            AnyVideo::Test(test) => test.lock().unwrap().thumbnail_url(),
+        }
+    }
+
     async fn thumbnail_with_client<P: AsRef<Path> + Send>(
         &self,
         client: &reqwest::Client,
