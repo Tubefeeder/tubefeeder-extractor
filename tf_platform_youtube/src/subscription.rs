@@ -152,10 +152,9 @@ impl GeneratorWithClient for YTSubscription {
         let piped = PipedClient::new(client, PIPED_API_URL);
         let channel_res = piped.channel_from_id(self.id.clone()).await;
 
-        if channel_res.is_err() {
-            // TODO: Better error handling.
+        if let Err(e) = &channel_res {
             log::error!("Error generating youtube videos from subscription {}", self);
-            errors.add(NetworkError("Youtube".to_string()).into());
+            errors.add(piped_to_tubefeeder_error(e));
             return vec![].into_iter();
         }
 
@@ -170,5 +169,13 @@ impl GeneratorWithClient for YTSubscription {
         )
         .collect::<Vec<YTVideo>>()
         .into_iter()
+    }
+}
+
+fn piped_to_tubefeeder_error(error: &piped::Error) -> tf_core::Error {
+    match error {
+        piped::Error::Network(e) => tf_core::NetworkError(e.to_string()).into(),
+        piped::Error::ParseResponse(e) => tf_core::ParseError(e.to_string()).into(),
+        piped::Error::Parseurl(e) => tf_core::ParseError(e.to_string()).into(),
     }
 }

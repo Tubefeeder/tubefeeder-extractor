@@ -17,7 +17,7 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::path::Path;
+use std::{convert::TryInto, path::Path};
 
 use crate::subscription::YTSubscription;
 
@@ -125,7 +125,14 @@ impl tf_core::Video for YTVideo {
         let webp_image = webp_decoder.decode();
         let dynamic_image = webp_image.map(|i| i.to_image());
 
-        let rgba_image = dynamic_image.map(|i| i.to_rgba8());
+        let rgba_image = dynamic_image.map(|i| {
+            i.resize(
+                width.try_into().unwrap_or(0),
+                height.try_into().unwrap_or(0),
+                image::imageops::FilterType::Triangle,
+            )
+            .to_rgba8()
+        });
 
         if let Some(image) = rgba_image {
             let _ = image.save(filename);
@@ -145,7 +152,6 @@ impl YTVideo {
             url: format!("{}/{}", YOUTUBE_URL, v.url),
             title: v.title,
             subscription,
-            // TODO: Date
             uploaded: v
                 .uploaded_date
                 .map(|d| timeago_parser(d).ok())
