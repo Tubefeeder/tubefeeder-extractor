@@ -25,7 +25,7 @@ use async_trait::async_trait;
 use piped::RelatedStream;
 use tf_core::ErrorStore;
 
-const PIPED_URL: &'static str = "https://piped.kavin.rocks";
+const YOUTUBE_URL: &'static str = "https://www.youtube.com";
 const USER_AGENT: &'static str =
     "Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0";
 
@@ -142,7 +142,7 @@ impl YTVideo {
         subscription: YTSubscription,
     ) -> Self {
         YTVideo {
-            url: format!("{}/{}", PIPED_URL, v.url),
+            url: format!("{}/{}", YOUTUBE_URL, v.url),
             title: v.title,
             subscription,
             // TODO: Date
