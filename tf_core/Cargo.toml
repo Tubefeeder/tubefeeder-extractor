@@ -20,10 +20,6 @@ reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = f
 futures = "^0.3"
 log = "^0.4"
 
-gdk-pixbuf = "^0.14"
-glib = "^0.14"
-gio = "^0.14"
-
 image = "^0.23"
 
 [dev-dependencies]
