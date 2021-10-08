@@ -17,6 +17,8 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+//! A crate to group multiple items into a observable playlist used in [Tubefeeder-extractor](https://github.com/Tubefeeder/tubefeeder-extractor).
+
 mod playlist;
 mod playlist_manager;
 

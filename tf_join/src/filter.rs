@@ -35,14 +35,14 @@ pub struct AnyVideoFilter {
     /// If this is `None`, the [Platform] will be ignored.
     platform: Option<Platform>,
 
-    /// Filter the [AnyVideo::title].
+    /// Filter the [Video::title].
     ///
-    /// If this is `None`, the [AnyVideo::title] will be ignored.
+    /// If this is `None`, the [Video::title] will be ignored.
     title: Option<Regex>,
 
-    /// Filter the [AnySubscription::name][crate::AnySubscription::name].
+    /// Filter the [Subscription::name].
     ///
-    /// If this is `None`, the [AnySubscription::name][crate::AnySubscription::name] will be ignored.
+    /// If this is `None`, the [Subscription::name] will be ignored.
     subscription: Option<Regex>,
 }
 
@@ -72,7 +72,7 @@ impl std::hash::Hash for AnyVideoFilter {
 impl AnyVideoFilter {
     /// Create a new [AnyVideoFilter] matching a [AnyVideo].
     ///
-    /// The [Platform], [AnyVideo::title] and [AnySubscription::name][crate::AnySubscription::name] will be matched.
+    /// The [Platform], [Video::title] and [Subscription::name] will be matched.
     /// If the respecting field is `None`, this field will be ignored.
     pub fn new(
         platform: Option<Platform>,

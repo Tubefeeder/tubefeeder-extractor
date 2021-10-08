@@ -17,6 +17,8 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+//! A implementation of a [Tubefeeder-extractor](https://github.com/Tubefeeder/tubefeeder-extractor) for lbry using rss-feeds.
+
 mod subscription;
 mod video;
 

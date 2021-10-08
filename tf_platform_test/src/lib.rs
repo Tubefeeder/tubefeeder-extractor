@@ -17,6 +17,8 @@
  * along with Tubefeeder-extractor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+//! A test implementation of a [Tubefeeder-extractor](https://github.com/Tubefeeder/tubefeeder-extractor) subscription and video.
+
 use tf_core::{ErrorStore, GeneratorWithClient, Subscription, Video};
 
 use async_trait::async_trait;

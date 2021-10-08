@@ -34,6 +34,8 @@
 //! by default. The possible features currently are:
 //!
 //! - `youtube`
+//! - `peertube`
+//! - `lbry`
 
 mod filter;
 mod joiner;

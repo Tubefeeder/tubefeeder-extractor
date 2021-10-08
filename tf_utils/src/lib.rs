@@ -1,3 +1,6 @@
+//! Utility functions for [Tubefeeder-extractor](https://github.com/Tubefeeder/tubefeeder-extractor), e.g. parsing of RSS and
+//! parsing of human-readable times.
+
 pub mod rss;
 
 /// Parse textual upload date (e.g. `4 months ago`) to a approximate date.
