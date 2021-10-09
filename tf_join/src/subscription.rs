@@ -21,6 +21,25 @@ use std::{convert::TryFrom, str::FromStr};
 
 use tf_core::Subscription;
 
+macro_rules! match_subscription {
+    ($sub: ident, $func_name: ident) => {
+        match_subscription!($sub, $func_name())
+    };
+    ($sub: ident, $($func_name: ident ($($arg: ident),*)).*) => {
+        match $sub {
+            #[cfg(feature = "youtube")]
+            AnySubscription::Youtube(s) => s.$($func_name($($arg)*))*,
+            #[cfg(feature = "peertube")]
+            AnySubscription::Peertube(s) => s.$($func_name($($arg)*))*,
+            #[cfg(feature = "lbry")]
+            AnySubscription::Lbry(s) => s.$($func_name($($arg)*))*,
+            // -- Add new value here.
+            #[cfg(test)]
+            AnySubscription::Test(s) => s.$($func_name($($arg)*))*,
+        }
+    };
+}
+
 /// A [Subscription][tf_core::Subscription] to any [Platform].
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum AnySubscription {
@@ -55,17 +74,7 @@ impl AnySubscription {
 impl Subscription for AnySubscription {
     type Video = crate::AnyVideo;
     fn name(&self) -> Option<String> {
-        match &self {
-            #[cfg(feature = "youtube")]
-            AnySubscription::Youtube(s) => s.name(),
-            #[cfg(feature = "peertube")]
-            AnySubscription::Peertube(s) => s.name(),
-            #[cfg(feature = "lbry")]
-            AnySubscription::Lbry(s) => s.name(),
-            // -- Add new case here.
-            #[cfg(test)]
-            AnySubscription::Test(s) => s.name(),
-        }
+        match_subscription!(self, name)
     }
 }
 

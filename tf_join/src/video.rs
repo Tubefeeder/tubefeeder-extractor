@@ -32,6 +32,33 @@ use crate::{AnySubscription, Platform};
 
 const DATE_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
+macro_rules! match_video {
+    ($video: ident, $func_name: ident) => {
+        match_video!($video, $func_name())
+    };
+    ($video: ident, $($func_name: ident ($($arg: ident),*)).*) => {
+        match $video {
+            #[cfg(feature = "youtube")]
+            AnyVideo::Youtube(v) => v.lock().unwrap().$($func_name($($arg)*))*,
+            #[cfg(feature = "peertube")]
+            AnyVideo::Peertube(v) => v.lock().unwrap().$($func_name($($arg)*))*,
+            #[cfg(feature = "lbry")]
+            AnyVideo::Lbry(v) => v.lock().unwrap().$($func_name($($arg)*))*,
+            // -- Add new value here.
+            #[cfg(test)]
+            AnyVideo::Test(v) => v.lock().unwrap().$($func_name($($arg)*))*,
+        }
+    };
+}
+
+fn arc_eq<S: Eq>(a1: &Arc<Mutex<S>>, a2: &Arc<Mutex<S>>) -> bool {
+    if Arc::ptr_eq(a1, a2) {
+        true
+    } else {
+        a1.lock().unwrap().eq(&a2.lock().unwrap())
+    }
+}
+
 /// A [Video] coming from any [Platform].
 #[derive(Clone)]
 pub enum AnyVideo {
@@ -48,17 +75,7 @@ pub enum AnyVideo {
 
 impl std::hash::Hash for AnyVideo {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(v) => v.lock().unwrap().hash(state),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(v) => v.lock().unwrap().hash(state),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(v) => v.lock().unwrap().hash(state),
-            // -- Add new value here.
-            #[cfg(test)]
-            AnyVideo::Test(v) => v.lock().unwrap().hash(state),
-        }
+        match_video!(self, hash(state))
     }
 }
 
@@ -66,38 +83,14 @@ impl std::cmp::PartialEq for AnyVideo {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             #[cfg(feature = "youtube")]
-            (AnyVideo::Youtube(v1), AnyVideo::Youtube(v2)) => {
-                if Arc::ptr_eq(v1, v2) {
-                    true
-                } else {
-                    v1.lock().unwrap().eq(&v2.lock().unwrap())
-                }
-            }
+            (AnyVideo::Youtube(v1), AnyVideo::Youtube(v2)) => arc_eq(v1, v2),
             #[cfg(feature = "peertube")]
-            (AnyVideo::Peertube(v1), AnyVideo::Peertube(v2)) => {
-                if Arc::ptr_eq(v1, v2) {
-                    true
-                } else {
-                    v1.lock().unwrap().eq(&v2.lock().unwrap())
-                }
-            }
+            (AnyVideo::Peertube(v1), AnyVideo::Peertube(v2)) => arc_eq(v1, v2),
             #[cfg(feature = "lbry")]
-            (AnyVideo::Lbry(v1), AnyVideo::Lbry(v2)) => {
-                if Arc::ptr_eq(v1, v2) {
-                    true
-                } else {
-                    v1.lock().unwrap().eq(&v2.lock().unwrap())
-                }
-            }
+            (AnyVideo::Lbry(v1), AnyVideo::Lbry(v2)) => arc_eq(v1, v2),
             // -- Add new value here.
             #[cfg(test)]
-            (AnyVideo::Test(v1), AnyVideo::Test(v2)) => {
-                if Arc::ptr_eq(v1, v2) {
-                    true
-                } else {
-                    v1.lock().unwrap().eq(&v2.lock().unwrap())
-                }
-            }
+            (AnyVideo::Test(v1), AnyVideo::Test(v2)) => arc_eq(v1, v2),
             #[allow(unreachable_patterns)]
             _ => false,
         }
@@ -111,45 +104,15 @@ impl Video for AnyVideo {
     type Subscription = AnySubscription;
 
     fn url(&self) -> String {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().url(),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().url(),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().url(),
-            // -- Add new value here.
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().url(),
-        }
+        match_video!(self, url)
     }
 
     fn title(&self) -> String {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().title(),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().title(),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().title(),
-            // -- Add new value here.
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().title(),
-        }
+        match_video!(self, title)
     }
 
     fn uploaded(&self) -> chrono::NaiveDateTime {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().uploaded(),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().uploaded(),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().uploaded(),
-            // -- Add new value here.
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().uploaded(),
-        }
+        match_video!(self, uploaded)
     }
 
     fn subscription(&self) -> AnySubscription {
@@ -167,17 +130,7 @@ impl Video for AnyVideo {
     }
 
     fn thumbnail_url(&self) -> String {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().thumbnail_url(),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().thumbnail_url(),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().thumbnail_url(),
-            // -- Add new value here.
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().thumbnail_url(),
-        }
+        match_video!(self, thumbnail_url)
     }
 
     async fn thumbnail_with_client(&self, client: &reqwest::Client) -> image::DynamicImage {
@@ -210,61 +163,31 @@ impl Video for AnyVideo {
 impl AnyVideo {
     /// Set the playing status of the [AnyVideo] to playing.
     pub fn play(&self) {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().play(),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().play(),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().play(),
-            // -- Add new value here
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().play(),
-        }
+        match_video!(self, play)
     }
 
     /// Set the playing status of the [AnyVideo] to stopped.
     pub fn stop(&self) {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().stop(),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().stop(),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().stop(),
-            // -- Add new value here
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().stop(),
-        }
+        match_video!(self, stop)
     }
 
     /// Gets the playing status of the [AnyVideo].
     pub fn playing(&self) -> bool {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().playing(),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().playing(),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().playing(),
-            // -- Add new value here
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().playing(),
-        }
+        match_video!(self, playing)
     }
 
     /// Get the [Platform] where the [AnyVideo] was uploaded.
     pub fn platform(&self) -> Platform {
         match self {
             #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(_yt) => Platform::Youtube,
+            AnyVideo::Youtube(_v) => Platform::Youtube,
             #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(_pt) => Platform::Peertube,
+            AnyVideo::Peertube(_v) => Platform::Peertube,
             #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(_lbry) => Platform::Lbry,
+            AnyVideo::Lbry(_v) => Platform::Lbry,
             // -- Add new value here
             #[cfg(test)]
-            AnyVideo::Test(_test) => Platform::Test,
+            AnyVideo::Test(_v) => Platform::Test,
         }
     }
 }
@@ -274,34 +197,14 @@ impl Observable<tf_core::VideoEvent> for AnyVideo {
         &mut self,
         observer: std::sync::Weak<Mutex<Box<dyn Observer<tf_core::VideoEvent> + Send>>>,
     ) {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().attach(observer),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().attach(observer),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().attach(observer),
-            // -- Add new value here.
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().attach(observer),
-        }
+        match_video!(self, attach(observer));
     }
 
     fn detach(
         &mut self,
         observer: std::sync::Weak<Mutex<Box<dyn Observer<tf_core::VideoEvent> + Send>>>,
     ) {
-        match self {
-            #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(yt) => yt.lock().unwrap().detach(observer),
-            #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(pt) => pt.lock().unwrap().detach(observer),
-            #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(lbry) => lbry.lock().unwrap().detach(observer),
-            // -- Add new value here.
-            #[cfg(test)]
-            AnyVideo::Test(test) => test.lock().unwrap().detach(observer),
-        }
+        match_video!(self, detach(observer));
     }
 }
 
