@@ -99,44 +99,23 @@ impl TryFrom<Vec<String>> for AnySubscription {
     type Error = ();
 
     fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
-        let platform = value.get(0).map(|p| Platform::from_str(p.as_str()));
+        if value.len() == 0 {
+            return Err(());
+        }
+
+        let mut value_mut = value.clone();
+
+        let platform = Platform::from_str(value_mut.remove(0).as_str());
         match platform {
             #[cfg(feature = "youtube")]
-            Some(Ok(Platform::Youtube)) => {
-                let id = value.get(1);
-                match id {
-                    Some(id) => Ok(tf_yt::YTSubscription::new(id).into()),
-                    _ => Err(()),
-                }
-            }
+            Ok(Platform::Youtube) => tf_yt::YTSubscription::try_from(value_mut).map(|s| s.into()),
             #[cfg(feature = "peertube")]
-            Some(Ok(Platform::Peertube)) => {
-                let id = value.get(1);
-                let base_url = value.get(2);
-                match (id, base_url) {
-                    (Some(id), Some(base_url)) => {
-                        Ok(tf_pt::PTSubscription::new(base_url, id).into())
-                    }
-                    _ => Err(()),
-                }
-            }
+            Ok(Platform::Peertube) => tf_pt::PTSubscription::try_from(value_mut).map(|s| s.into()),
             #[cfg(feature = "lbry")]
-            Some(Ok(Platform::Lbry)) => {
-                let id = value.get(1);
-                match id {
-                    Some(id) => Ok(tf_lbry::LbrySubscription::new(id).into()),
-                    _ => Err(()),
-                }
-            }
+            Ok(Platform::Lbry) => tf_lbry::LbrySubscription::try_from(value_mut).map(|s| s.into()),
             // -- Add new case here.
             #[cfg(test)]
-            Some(Ok(Platform::Test)) => {
-                let id = value.get(1);
-                match id {
-                    Some(id) => Ok(tf_test::TestSubscription::new(id).into()),
-                    _ => Err(()),
-                }
-            }
+            Ok(Platform::Test) => tf_test::TestSubscription::try_from(value_mut).map(|s| s.into()),
             _ => Err(()),
         }
     }
@@ -145,20 +124,9 @@ impl TryFrom<Vec<String>> for AnySubscription {
 impl From<AnySubscription> for Vec<String> {
     fn from(sub: AnySubscription) -> Self {
         let mut result = vec![sub.platform().into()];
-        match sub {
-            #[cfg(feature = "youtube")]
-            AnySubscription::Youtube(s) => result.push(s.id()),
-            #[cfg(feature = "peertube")]
-            AnySubscription::Peertube(s) => {
-                result.push(s.id());
-                result.push(s.base_url());
-            }
-            #[cfg(feature = "lbry")]
-            AnySubscription::Lbry(s) => result.push(s.id()),
-            // -- Add new case here
-            #[cfg(test)]
-            AnySubscription::Test(s) => result.push(s.name().unwrap()),
-        }
+        let sub_vec: Vec<String> = match_subscription!(sub, into());
+
+        result.extend(sub_vec);
 
         result
     }

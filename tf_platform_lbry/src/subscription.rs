@@ -61,6 +61,24 @@ impl LbrySubscription {
     }
 }
 
+impl std::convert::TryFrom<Vec<String>> for LbrySubscription {
+    type Error = ();
+
+    fn try_from(strings: Vec<String>) -> Result<Self, Self::Error> {
+        if let Some(value) = strings.get(0) {
+            Ok(LbrySubscription::new(value))
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl From<LbrySubscription> for Vec<String> {
+    fn from(sub: LbrySubscription) -> Self {
+        vec![sub.id]
+    }
+}
+
 impl WithName for LbrySubscription {
     fn with_name<S: AsRef<str>>(&self, name: S) -> Self {
         Self {

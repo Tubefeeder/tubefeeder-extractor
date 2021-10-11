@@ -56,6 +56,20 @@ where
     }
 }
 
+impl<V: Video> std::convert::TryFrom<Vec<String>> for ExpandedVideo<V> {
+    type Error = <V as std::convert::TryFrom<Vec<String>>>::Error;
+
+    fn try_from(strings: Vec<String>) -> Result<Self, Self::Error> {
+        V::try_from(strings).map(|v| ExpandedVideo::from(v))
+    }
+}
+
+impl<V: Video> From<ExpandedVideo<V>> for Vec<String> {
+    fn from(video: ExpandedVideo<V>) -> Self {
+        video.video.into()
+    }
+}
+
 #[async_trait]
 impl<V: Video> Video for ExpandedVideo<V> {
     type Subscription = V::Subscription;

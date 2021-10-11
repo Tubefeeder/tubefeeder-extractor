@@ -26,9 +26,29 @@ use {crate::mock::MockVideo, mockall::predicate::*, mockall::*};
 
 /// A [Subscription] to a channel. The [Subscription] must be able to generate
 /// [Video]s asyncronously.
+///
+/// A subscription needs to be:
+///
+/// - [std::clone::Clone]: Should just be derived.
+/// - [std::marker::Sync]: Already implemented by default if you do not make anything weird.
+/// - [std::marker::Send]: Similar to Sync probably also implemented by default.
+/// - [std::fmt::Display]: Display the name if available, otherwise display additional information, e.g. id.
+/// - [std::cmp::PartialEq]: Do only compare identifying information, e.g. id but not name if that can be reused.
+/// - [std::cmp::Eq]: Just a blanket implementation after PartialEq.
+/// - [std::hash::Hash]: Hash only identifying information, similar to [std::cmp::PartialEq].
+/// - [std::convert::Into<Vec<String>>]: Serialize into a vec of strings. Do only serialize identifying information.
+/// - [std::convert::TryFrom<Vec<String>>]: Deserialize information similar to serialization.
 #[async_trait]
 pub trait Subscription:
-    Clone + std::marker::Send + std::marker::Sync + std::fmt::Display + PartialEq + Eq + std::hash::Hash
+    Clone
+    + std::marker::Send
+    + std::marker::Sync
+    + std::fmt::Display
+    + PartialEq
+    + Eq
+    + std::hash::Hash
+    + Into<Vec<String>>
+    + std::convert::TryFrom<Vec<String>>
 {
     type Video: Video;
 
@@ -69,6 +89,13 @@ mock! {
         }
     }
 
+    impl std::convert::TryFrom<Vec<String>> for Subscription {
+        type Error = ();
+        fn try_from(_vec: Vec<String>) -> Result<Self, ()> {
+            Err(())
+        }
+    }
+
     impl Subscription for Subscription {
         type Video = MockVideo;
         fn name(&self) -> Option<String>;
@@ -88,5 +115,12 @@ impl std::hash::Hash for MockSubscription {
     where
         H: std::hash::Hasher,
     {
+    }
+}
+
+#[cfg(test)]
+impl std::convert::From<MockSubscription> for Vec<String> {
+    fn from(_sub: MockSubscription) -> Self {
+        vec![]
     }
 }

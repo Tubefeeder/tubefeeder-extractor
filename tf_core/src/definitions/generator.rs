@@ -88,6 +88,13 @@ mock! {
     impl Eq for Generator {
     }
 
+    impl std::convert::TryFrom<Vec<String>> for Generator {
+        type Error = ();
+        fn try_from(_vec: Vec<String>) -> Result<Self, ()> {
+            Err(())
+        }
+    }
+
     #[async_trait]
     impl Generator for Generator {
         type Item = MockVideo;
@@ -107,5 +114,12 @@ impl std::hash::Hash for MockGenerator {
     where
         H: std::hash::Hasher,
     {
+    }
+}
+
+#[cfg(test)]
+impl std::convert::From<MockGenerator> for Vec<String> {
+    fn from(_sub: MockGenerator) -> Self {
+        vec![]
     }
 }

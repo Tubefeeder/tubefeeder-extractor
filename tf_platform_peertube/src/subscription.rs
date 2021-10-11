@@ -80,6 +80,24 @@ impl PTSubscription {
     }
 }
 
+impl std::convert::TryFrom<Vec<String>> for PTSubscription {
+    type Error = ();
+
+    fn try_from(strings: Vec<String>) -> Result<Self, Self::Error> {
+        if let (Some(id), Some(base_url)) = (strings.get(0), strings.get(1)) {
+            Ok(PTSubscription::new(base_url, id))
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl From<PTSubscription> for Vec<String> {
+    fn from(sub: PTSubscription) -> Self {
+        vec![sub.id, sub.base_url]
+    }
+}
+
 impl WithName for PTSubscription {
     fn with_name<S: AsRef<str>>(&self, name: S) -> Self {
         Self {

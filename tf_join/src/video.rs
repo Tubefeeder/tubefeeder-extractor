@@ -25,12 +25,10 @@ use std::{
 
 use async_trait::async_trait;
 
-use tf_core::{ExpandedVideo, Subscription, Video};
+use tf_core::{ExpandedVideo, Video};
 use tf_observer::{Observable, Observer};
 
 use crate::{AnySubscription, Platform};
-
-const DATE_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
 macro_rules! match_video {
     ($video: ident, $func_name: ident) => {
@@ -213,112 +211,27 @@ impl TryFrom<Vec<String>> for AnyVideo {
     type Error = ();
 
     fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
-        let platform = value.get(0).map(|p| Platform::from_str(p.as_str()));
+        if value.len() == 0 {
+            return Err(());
+        }
+
+        let mut value_mut = value.clone();
+
+        let platform = Platform::from_str(value_mut.remove(0).as_str());
         match platform {
             #[cfg(feature = "youtube")]
-            Some(Ok(Platform::Youtube)) => {
-                let url_opt = value.get(1);
-                let title = value.get(2);
-                let uploaded = value.get(3);
-                let sub_name = value.get(4);
-                let sub_id = value.get(5);
-                let thumbnail_url = value.get(6);
-                match (url_opt, title, uploaded, sub_name, sub_id, thumbnail_url) {
-                    (Some(url), Some(tit), Some(upl), Some(sub_n), Some(sub_i), Some(thu)) => {
-                        let upl_date = chrono::NaiveDateTime::parse_from_str(upl, DATE_FORMAT);
-                        if let Ok(upl) = upl_date {
-                            let sub = tf_yt::YTSubscription::new_with_name(sub_i, sub_n);
-                            Ok(Arc::new(Mutex::new(ExpandedVideo::from(tf_yt::YTVideo::new(
-                                url, tit, upl, sub, thu,
-                            ))))
-                            .into())
-                        } else {
-                            Err(())
-                        }
-                    }
-                    _ => Err(()),
-                }
-            }
+            Ok(Platform::Youtube) => tf_yt::YTVideo::try_from(value_mut)
+                .map(|v| Arc::new(Mutex::new(ExpandedVideo::from(v))).into()),
             #[cfg(feature = "peertube")]
-            Some(Ok(Platform::Peertube)) => {
-                let url_opt = value.get(1);
-                let title = value.get(2);
-                let uploaded = value.get(3);
-                let sub_name = value.get(4);
-                let sub_id = value.get(5);
-                let sub_base_url = value.get(6);
-                let thumbnail_url = value.get(7);
-                match (
-                    url_opt,
-                    title,
-                    uploaded,
-                    sub_name,
-                    sub_id,
-                    sub_base_url,
-                    thumbnail_url,
-                ) {
-                    (
-                        Some(url),
-                        Some(tit),
-                        Some(upl),
-                        Some(sub_n),
-                        Some(sub_i),
-                        Some(sub_u),
-                        Some(thu),
-                    ) => {
-                        let upl_date = chrono::NaiveDateTime::parse_from_str(upl, DATE_FORMAT);
-                        if let Ok(upl) = upl_date {
-                            let sub = tf_pt::PTSubscription::new_with_name(sub_u, sub_i, sub_n);
-                            Ok(Arc::new(Mutex::new(ExpandedVideo::from(tf_pt::PTVideo::new(
-                                url, tit, upl, sub, thu,
-                            ))))
-                            .into())
-                        } else {
-                            Err(())
-                        }
-                    }
-                    _ => Err(()),
-                }
-            }
+            Ok(Platform::Peertube) => tf_pt::PTVideo::try_from(value_mut)
+                .map(|v| Arc::new(Mutex::new(ExpandedVideo::from(v))).into()),
             #[cfg(feature = "lbry")]
-            Some(Ok(Platform::Lbry)) => {
-                let url_opt = value.get(1);
-                let title = value.get(2);
-                let uploaded = value.get(3);
-                let sub_name = value.get(4);
-                let sub_id = value.get(5);
-                let thumbnail_url = value.get(6);
-                match (url_opt, title, uploaded, sub_name, sub_id, thumbnail_url) {
-                    (Some(url), Some(tit), Some(upl), Some(sub_n), Some(sub_i), Some(thu)) => {
-                        let upl_date = chrono::NaiveDateTime::parse_from_str(upl, DATE_FORMAT);
-                        if let Ok(upl) = upl_date {
-                            let sub = tf_lbry::LbrySubscription::new_with_name(sub_i, sub_n);
-                            Ok(
-                                Arc::new(Mutex::new(ExpandedVideo::from(tf_lbry::LbryVideo::new(
-                                    url, tit, upl, sub, thu,
-                                ))))
-                                .into(),
-                            )
-                        } else {
-                            Err(())
-                        }
-                    }
-                    _ => Err(()),
-                }
-            }
+            Ok(Platform::Lbry) => tf_lbry::LbryVideo::try_from(value_mut)
+                .map(|v| Arc::new(Mutex::new(ExpandedVideo::from(v))).into()),
             // -- Add value here
             #[cfg(test)]
-            Some(Ok(Platform::Test)) => {
-                let title = value.get(1);
-                let sub_id = value.get(2);
-                match (title, sub_id) {
-                    (Some(t), Some(s)) => Ok(Arc::new(Mutex::new(ExpandedVideo::from(
-                        tf_test::TestVideo::new(t, tf_test::TestSubscription::new(s)),
-                    )))
-                    .into()),
-                    _ => Err(()),
-                }
-            }
+            Ok(Platform::Test) => tf_test::TestVideo::try_from(value_mut)
+                .map(|v| Arc::new(Mutex::new(ExpandedVideo::from(v))).into()),
             _ => Err(()),
         }
     }
@@ -327,50 +240,18 @@ impl TryFrom<Vec<String>> for AnyVideo {
 impl From<AnyVideo> for Vec<String> {
     fn from(video: AnyVideo) -> Self {
         let mut result = vec![video.platform().into()];
-        match video {
+        let vid_vec: Vec<String> = match video {
             #[cfg(feature = "youtube")]
-            AnyVideo::Youtube(v_arc) => {
-                let v = v_arc.lock().unwrap();
-                result.push(v.url());
-                result.push(v.title());
-                result.push(v.uploaded().format(DATE_FORMAT).to_string());
-                let sub = v.subscription();
-                result.push(sub.name().unwrap_or_else(|| "".to_string()));
-                result.push(sub.id());
-                result.push(v.internal().thumbnail_url());
-            }
+            AnyVideo::Youtube(v) => v.lock().unwrap().clone().into(),
             #[cfg(feature = "peertube")]
-            AnyVideo::Peertube(v_arc) => {
-                let v = v_arc.lock().unwrap();
-                result.push(v.url());
-                result.push(v.title());
-                result.push(v.uploaded().format(DATE_FORMAT).to_string());
-                let sub = v.subscription();
-                result.push(sub.name().unwrap_or_else(|| "".to_string()));
-                result.push(sub.id());
-                result.push(sub.base_url());
-                result.push(v.internal().thumbnail_url());
-            }
+            AnyVideo::Peertube(v) => v.lock().unwrap().clone().into(),
             #[cfg(feature = "lbry")]
-            AnyVideo::Lbry(v_arc) => {
-                let v = v_arc.lock().unwrap();
-                result.push(v.url());
-                result.push(v.title());
-                result.push(v.uploaded().format(DATE_FORMAT).to_string());
-                let sub = v.subscription();
-                result.push(sub.name().unwrap_or_else(|| "".to_string()));
-                result.push(sub.id());
-                result.push(v.internal().thumbnail_url());
-            }
-            // -- Add case here.
+            AnyVideo::Lbry(v) => v.lock().unwrap().clone().into(),
+            // -- Add new value here.
             #[cfg(test)]
-            AnyVideo::Test(v_arc) => {
-                let v = v_arc.lock().unwrap();
-                result.push(v.title());
-                result.push(v.subscription().name().unwrap_or("".to_string()));
-            }
-        }
-
+            AnyVideo::Test(v) => v.lock().unwrap().clone().into(),
+        };
+        result.append(&mut vid_vec.clone());
         result
     }
 }
@@ -396,7 +277,7 @@ impl From<Arc<Mutex<ExpandedVideo<tf_lbry::LbryVideo>>>> for AnyVideo {
     }
 }
 
-// -- Add case here.
+// -- Add conversion here.
 
 #[cfg(test)]
 impl From<Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>> for AnyVideo {
@@ -409,6 +290,7 @@ impl From<Arc<Mutex<ExpandedVideo<tf_test::TestVideo>>>> for AnyVideo {
 mod test {
     use super::*;
     use std::convert::TryInto;
+    use tf_core::Subscription;
     use tf_test::{TestSubscription, TestVideo};
 
     #[test]

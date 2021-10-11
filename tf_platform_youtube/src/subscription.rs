@@ -134,6 +134,24 @@ impl std::fmt::Display for YTSubscription {
     }
 }
 
+impl std::convert::TryFrom<Vec<String>> for YTSubscription {
+    type Error = ();
+
+    fn try_from(strings: Vec<String>) -> Result<Self, Self::Error> {
+        if let Some(value) = strings.get(0) {
+            Ok(YTSubscription::new(value))
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl From<YTSubscription> for Vec<String> {
+    fn from(sub: YTSubscription) -> Self {
+        vec![sub.id]
+    }
+}
+
 #[async_trait]
 impl GeneratorWithClient for YTSubscription {
     type Item = YTVideo;

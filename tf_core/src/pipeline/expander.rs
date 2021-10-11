@@ -63,7 +63,7 @@ where
     async fn generate(&self, errors: &ErrorStore) -> Self::Iterator {
         let iterator = self.generator.generate(errors).await;
         let mapped_iterator: Box<dyn Iterator<Item = ExpandedVideo<V>> + std::marker::Send> =
-            Box::new(iterator.map(|v| v.into()))
+            Box::new(iterator.map(|v| ExpandedVideo::from(v)))
                 as Box<dyn Iterator<Item = <Self as Generator>::Item> + std::marker::Send>;
         mapped_iterator
     }

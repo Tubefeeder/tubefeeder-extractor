@@ -26,9 +26,24 @@ use image::DynamicImage;
 use {crate::mock::MockSubscription, mockall::predicate::*, mockall::*};
 
 /// A [`Video`] that can come from any website.
+/// A video needs to be:
+///
+/// - [std::clone::Clone]: Should just be derived.
+/// - [std::marker::Sync]: Already implemented by default if you do not make anything weird.
+/// - [std::marker::Send]: Similar to Sync probably also implemented by default.
+/// - [std::cmp::Eq]: Do only compare identifying information, e.g. id but not name if that can be reused.
+/// - [std::hash::Hash]: Hash only identifying information, similar to [std::cmp::PartialEq].
+/// - [std::convert::Into<Vec<String>>]: Serialize into a vec of strings. Do only serialize identifying information.
+/// - [std::convert::TryFrom<Vec<String>>]: Deserialize information similar to serialization.
 #[async_trait]
 pub trait Video:
-    Clone + std::hash::Hash + std::cmp::Eq + std::marker::Send + std::marker::Sync
+    Clone
+    + std::hash::Hash
+    + std::cmp::Eq
+    + std::marker::Send
+    + std::marker::Sync
+    + Into<Vec<String>>
+    + std::convert::TryFrom<Vec<String>>
 {
     /// The [Subscription] of type of this video.
     type Subscription: Subscription;
@@ -99,8 +114,7 @@ pub trait Video:
 
     /// Get the thumbnail of the [Video].
     ///
-    /// The image will be fetched using [reqwest::Client::new]. It will
-    /// be saved with the given width and height.
+    /// The image will be fetched using [reqwest::Client::new].
     ///
     /// When not overwritten it will default to create a transparent picture.
     async fn thumbnail(&self) -> DynamicImage {
@@ -114,6 +128,13 @@ mock! {
 
     impl Clone for Video {
         fn clone(&self) -> Self;
+    }
+
+    impl std::convert::TryFrom<Vec<String>> for Video {
+        type Error = ();
+        fn try_from(_vec: Vec<String>) -> Result<Self, ()> {
+            Err(())
+        }
     }
 
     impl Video for Video {
@@ -142,3 +163,10 @@ impl PartialEq for MockVideo {
 }
 #[cfg(test)]
 impl Eq for MockVideo {}
+
+#[cfg(test)]
+impl std::convert::From<MockVideo> for Vec<String> {
+    fn from(_v: MockVideo) -> Self {
+        vec![]
+    }
+}

@@ -19,6 +19,8 @@
 
 //! A test implementation of a [Tubefeeder-extractor](https://github.com/Tubefeeder/tubefeeder-extractor) subscription and video.
 
+use std::convert::TryFrom;
+
 use tf_core::{ErrorStore, GeneratorWithClient, Subscription, Video};
 
 use async_trait::async_trait;
@@ -28,6 +30,25 @@ pub struct TestVideo {
     title: String,
     uploaded: chrono::NaiveDateTime,
     subscription: TestSubscription,
+}
+
+impl TryFrom<Vec<String>> for TestVideo {
+    type Error = ();
+
+    fn try_from(strings: Vec<String>) -> Result<Self, Self::Error> {
+        let title = strings.get(0);
+        let sub_id = strings.get(1);
+        match (title, sub_id) {
+            (Some(t), Some(s)) => Ok(TestVideo::new(t, TestSubscription::new(s))),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<TestVideo> for Vec<String> {
+    fn from(video: TestVideo) -> Self {
+        vec![video.title, video.subscription.name]
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
@@ -109,6 +130,24 @@ impl TestSubscription {
         TestSubscription {
             name: name.to_owned(),
         }
+    }
+}
+
+impl TryFrom<Vec<String>> for TestSubscription {
+    type Error = ();
+
+    fn try_from(strings: Vec<String>) -> Result<Self, Self::Error> {
+        if let Some(value) = strings.get(0) {
+            Ok(TestSubscription::new(value))
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl From<TestSubscription> for Vec<String> {
+    fn from(sub: TestSubscription) -> Self {
+        vec![sub.name]
     }
 }
 

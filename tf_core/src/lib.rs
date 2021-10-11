@@ -57,3 +57,6 @@ mod mock {
 pub mod prelude {
     pub use crate::{Generator, Subscription, Video};
 }
+
+/// The date format that has to be used when serializing or deserializing [Videos](Video) or [Subscriptions](Subscription).
+pub const DATE_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";

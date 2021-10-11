@@ -18,6 +18,7 @@
  */
 
 use async_trait::async_trait;
+use tf_core::{Subscription, Video, DATE_FORMAT};
 
 use crate::LbrySubscription;
 use tf_utils::rss::{FromItemAndSub, Item};
@@ -46,6 +47,45 @@ impl LbryVideo {
             subscription,
             thumbnail_url: thumbnail_url.as_ref().to_owned(),
         }
+    }
+}
+
+impl std::convert::TryFrom<Vec<String>> for LbryVideo {
+    type Error = ();
+
+    fn try_from(strings: Vec<String>) -> Result<Self, Self::Error> {
+        let url_opt = strings.get(0);
+        let title = strings.get(1);
+        let uploaded = strings.get(2);
+        let sub_name = strings.get(3);
+        let sub_id = strings.get(4);
+        let thumbnail_url = strings.get(5);
+        match (url_opt, title, uploaded, sub_name, sub_id, thumbnail_url) {
+            (Some(url), Some(tit), Some(upl), Some(sub_n), Some(sub_i), Some(thu)) => {
+                let upl_date = chrono::NaiveDateTime::parse_from_str(upl, DATE_FORMAT);
+                if let Ok(upl) = upl_date {
+                    let sub = LbrySubscription::new_with_name(sub_i, sub_n);
+                    Ok(LbryVideo::new(url, tit, upl, sub, thu))
+                } else {
+                    Err(())
+                }
+            }
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<LbryVideo> for Vec<String> {
+    fn from(video: LbryVideo) -> Self {
+        let mut result = vec![];
+        result.push(video.url());
+        result.push(video.title());
+        result.push(video.uploaded().format(DATE_FORMAT).to_string());
+        let sub = video.subscription();
+        result.push(sub.name().unwrap_or_else(|| "".to_string()));
+        result.push(sub.id());
+        result.push(video.thumbnail_url());
+        result
     }
 }
 

@@ -20,6 +20,7 @@
 use async_trait::async_trait;
 
 use crate::PTSubscription;
+use tf_core::{Subscription, Video, DATE_FORMAT};
 use tf_utils::rss::{FromItemAndSub, Item};
 
 #[derive(Clone, Hash, PartialEq, Eq)]
@@ -46,6 +47,55 @@ impl PTVideo {
             subscription,
             thumbnail_url: thumbnail_url.as_ref().to_owned(),
         }
+    }
+}
+
+impl std::convert::TryFrom<Vec<String>> for PTVideo {
+    type Error = ();
+
+    fn try_from(strings: Vec<String>) -> Result<Self, Self::Error> {
+        let url_opt = strings.get(0);
+        let title = strings.get(1);
+        let uploaded = strings.get(2);
+        let sub_name = strings.get(3);
+        let sub_id = strings.get(4);
+        let sub_base_url = strings.get(5);
+        let thumbnail_url = strings.get(6);
+        match (
+            url_opt,
+            title,
+            uploaded,
+            sub_name,
+            sub_id,
+            sub_base_url,
+            thumbnail_url,
+        ) {
+            (Some(url), Some(tit), Some(upl), Some(sub_n), Some(sub_i), Some(sub_u), Some(thu)) => {
+                let upl_date = chrono::NaiveDateTime::parse_from_str(upl, DATE_FORMAT);
+                if let Ok(upl) = upl_date {
+                    let sub = PTSubscription::new_with_name(sub_u, sub_i, sub_n);
+                    Ok(PTVideo::new(url, tit, upl, sub, thu))
+                } else {
+                    Err(())
+                }
+            }
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<PTVideo> for Vec<String> {
+    fn from(video: PTVideo) -> Self {
+        let mut result = vec![];
+        result.push(video.url());
+        result.push(video.title());
+        result.push(video.uploaded().format(DATE_FORMAT).to_string());
+        let sub = video.subscription();
+        result.push(sub.name().unwrap_or_else(|| "".to_string()));
+        result.push(sub.id());
+        result.push(sub.base_url());
+        result.push(video.thumbnail_url());
+        result
     }
 }
 
