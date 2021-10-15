@@ -20,8 +20,8 @@
 use crate::video::YTVideo;
 
 use async_trait::async_trait;
-use piped::PipedClient;
-use tf_core::{Error, ErrorStore, GeneratorWithClient, NetworkError, ParseError, Subscription};
+use piped::{ChannelSearchItem, PipedClient};
+use tf_core::{ErrorStore, GeneratorWithClient, Subscription};
 
 const PIPED_API_URL: &'static str = "https://pipedapi.kavin.rocks";
 
@@ -50,49 +50,22 @@ impl YTSubscription {
         }
     }
 
-    /// Try to interpret the given string as a id first, if this fails try
-    /// to interpret it as a name.
-    pub async fn from_id_or_name(id_or_name: &str) -> Result<Self, Error> {
+    /// Try to get a subscription using youtube search.
+    /// This will try to search the given query in youtube filtered only to channels
+    /// and return the first result if it exists.
+    pub async fn try_from_search<S: AsRef<str>>(query: S) -> Option<Self> {
+        log::debug!("Getting channel from query {}", query.as_ref());
         let piped = PipedClient::new(&reqwest::Client::new(), PIPED_API_URL);
-        if let Ok(_channel) = piped.channel_from_id(id_or_name).await {
-            Ok(Self::new(id_or_name))
+        let result = piped.search_channel(query).await;
+        if let Ok(channel_search) = result {
+            log::debug!(
+                "Got back a result with {} items",
+                channel_search.items.len()
+            );
+            channel_search.items.get(0).map(|i| i.into())
         } else {
-            Self::from_name(id_or_name).await
-        }
-    }
-
-    /// Try to create a new [`YTSubscription`] from the given name.
-    ///
-    /// Will return `None` if no such channel exists.
-    pub async fn from_name(name: &str) -> Result<Self, Error> {
-        let url = format!("https://www.youtube.com/c/{}/featured", name);
-        let content: Result<String, Error> = async {
-            let response = reqwest::get(&url).await;
-
-            if response.is_err() {
-                return Err(NetworkError(url).into());
-            }
-
-            let parsed = response.unwrap().text().await;
-
-            if parsed.is_err() {
-                return Err(NetworkError(url).into());
-            }
-
-            Ok(parsed.unwrap())
-        }
-        .await;
-
-        if let Err(e) = content {
-            Err(e)
-        } else {
-            let regex = regex::Regex::new(r#""externalId":"([0-9a-zA-Z_\-]*)"#).unwrap();
-
-            if let Some(id) = regex.captures(&content.unwrap()) {
-                Ok(Self::new_with_name(&id[1].to_string(), name))
-            } else {
-                Err(ParseError(name.to_string()).into())
-            }
+            log::error!("Got back a error: {}", result.err().unwrap());
+            None
         }
     }
 
@@ -187,6 +160,15 @@ impl GeneratorWithClient for YTSubscription {
         )
         .collect::<Vec<YTVideo>>()
         .into_iter()
+    }
+}
+
+impl From<&ChannelSearchItem> for YTSubscription {
+    fn from(item: &ChannelSearchItem) -> Self {
+        Self {
+            id: item.url.split('/').last().unwrap_or_default().to_string(),
+            name: Some(item.name.to_string()),
+        }
     }
 }
 
