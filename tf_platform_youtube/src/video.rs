@@ -25,7 +25,7 @@ use tf_core::{ErrorStore, Subscription, Video, DATE_FORMAT};
 
 const YOUTUBE_URL: &'static str = "https://www.youtube.com";
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug)]
 pub struct YTVideo {
     pub(crate) url: String,
     pub(crate) title: String,
@@ -33,6 +33,24 @@ pub struct YTVideo {
     pub(crate) subscription: YTSubscription,
     pub(crate) thumbnail_url: String,
 }
+
+impl std::hash::Hash for YTVideo {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.url.hash(state);
+        self.title.hash(state);
+        self.subscription.hash(state);
+    }
+}
+
+impl std::cmp::PartialEq for YTVideo {
+    fn eq(&self, other: &Self) -> bool {
+        self.url == other.url
+            && self.title == other.title
+            && self.subscription == other.subscription
+    }
+}
+
+impl std::cmp::Eq for YTVideo {}
 
 impl YTVideo {
     pub fn new<T: AsRef<str>>(

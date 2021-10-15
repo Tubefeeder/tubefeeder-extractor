@@ -23,7 +23,7 @@ use tf_core::{Subscription, Video, DATE_FORMAT};
 use crate::LbrySubscription;
 use tf_utils::rss::{FromItemAndSub, Item};
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct LbryVideo {
     pub(crate) url: String,
     pub(crate) title: String,
@@ -31,6 +31,24 @@ pub struct LbryVideo {
     pub(crate) subscription: LbrySubscription,
     pub(crate) thumbnail_url: String,
 }
+
+impl std::hash::Hash for LbryVideo {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.url.hash(state);
+        self.title.hash(state);
+        self.subscription.hash(state);
+    }
+}
+
+impl std::cmp::PartialEq for LbryVideo {
+    fn eq(&self, other: &Self) -> bool {
+        self.url == other.url
+            && self.title == other.title
+            && self.subscription == other.subscription
+    }
+}
+
+impl std::cmp::Eq for LbryVideo {}
 
 impl LbryVideo {
     pub fn new<T: AsRef<str>>(

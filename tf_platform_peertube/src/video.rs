@@ -23,7 +23,7 @@ use crate::PTSubscription;
 use tf_core::{Subscription, Video, DATE_FORMAT};
 use tf_utils::rss::{FromItemAndSub, Item};
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct PTVideo {
     pub(crate) url: String,
     pub(crate) title: String,
@@ -31,6 +31,24 @@ pub struct PTVideo {
     pub(crate) subscription: PTSubscription,
     pub(crate) thumbnail_url: String,
 }
+
+impl std::hash::Hash for PTVideo {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.url.hash(state);
+        self.title.hash(state);
+        self.subscription.hash(state);
+    }
+}
+
+impl std::cmp::PartialEq for PTVideo {
+    fn eq(&self, other: &Self) -> bool {
+        self.url == other.url
+            && self.title == other.title
+            && self.subscription == other.subscription
+    }
+}
+
+impl std::cmp::Eq for PTVideo {}
 
 impl PTVideo {
     pub fn new<T: AsRef<str>>(
