@@ -1,6 +1,6 @@
 [package]
 name = "tf_join"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 license = "GPL-3.0-or-later"
 description = "Join multiple platforms in Tubefeeder-Extractor"
@@ -11,13 +11,13 @@ keywords = [ "tubefeeder" ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tf_observer = { version = "0.1.0", path = "../tf_observer" }
-tf_core = { version = "0.1.0", path = "../tf_core" }
-tf_filter = { version = "0.1.0", path = "../tf_filter"}
+tf_observer = { version = "0.1.1", path = "../tf_observer" }
+tf_core = { version = "0.1.1", path = "../tf_core" }
+tf_filter = { version = "0.1.1", path = "../tf_filter"}
 
-tf_yt = { package = "tf_platform_youtube", path = "../tf_platform_youtube", optional = true}
-tf_pt = { package = "tf_platform_peertube", path = "../tf_platform_peertube", optional = true}
-tf_lbry = { package = "tf_platform_lbry", path = "../tf_platform_lbry", optional = true}
+tf_yt = { package = "tf_platform_youtube", version = "0.1.0", path = "../tf_platform_youtube", optional = true}
+tf_pt = { package = "tf_platform_peertube", version = "0.1.0", path = "../tf_platform_peertube", optional = true}
+tf_lbry = { package = "tf_platform_lbry", version = "0.1.0", path = "../tf_platform_lbry", optional = true}
 # -- Add dependency here.
 
 async-trait = "^0.1"
@@ -33,7 +33,7 @@ env_logger =  "^0.9"
 log = "^0.4"
 tokio = { version = "^1.9", features = [ "macros" ] }
 
-tf_test = { package = "tf_platform_test", path = "../tf_platform_test"}
+tf_test = { package = "tf_platform_test", version = "0.1.1", path = "../tf_platform_test"}
 
 [features]
 # -- Add new feature into the default list.

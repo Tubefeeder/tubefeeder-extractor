@@ -1,6 +1,6 @@
 [package]
 name = "tf_utils"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 license = "GPL-3.0-or-later"
 description = "Utility functions in Tubefeeder-Extractor"
@@ -17,7 +17,7 @@ reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = f
 async-trait = "^0.1"
 
 serde = { version = "^1.0", features = [ "derive" ] }
-quick-xml = { version = "^0.22", features = [ "serde" ] }
+quick-xml = { version = "^0.22", features = [ "serialize" ] }
 
 chrono = { version = "^0.4", features = [ "serde" ] }
 parse_duration = "^2.1"

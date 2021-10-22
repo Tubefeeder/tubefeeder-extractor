@@ -1,6 +1,6 @@
 [package]
 name = "tf_platform_youtube"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 license = "GPL-3.0-or-later"
 description = "The platform for youtube Tubefeeder-Extractor"
@@ -10,10 +10,10 @@ repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tf_core = { package = "tf_core", path = "../tf_core" }
-tf_utils = { package = "tf_utils", path = "../tf_utils" }
+tf_core = { version = "0.1.1", path = "../tf_core" }
+tf_utils = { version = "0.1.1", path = "../tf_utils" }
 
-piped = { package = "piped", git = "https://github.com/TeamPiped/piped-rust-sdk.git", rev = "d33978556893d95a59f246b1e3a04776f5e834b6" }
+piped = "0.0.1"
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
