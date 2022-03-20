@@ -1,7 +1,7 @@
 [package]
 name = "tf_platform_peertube"
-version = "0.1.0"
-edition = "2018"
+version = "0.1.1"
+edition = "2021"
 license = "GPL-3.0-or-later"
 description = "The platform for peertube Tubefeeder-Extractor"
 homepage = "https://www.tubefeeder.de"
@@ -10,8 +10,8 @@ repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tf_core = { version = "0.1.1", path = "../tf_core" }
-tf_utils = { version = "0.1.1", path = "../tf_utils" }
+tf_core = { version = "0.1.2", path = "../tf_core" }
+tf_utils = { version = "0.1.2", path = "../tf_utils" }
 
 chrono = { version = "^0.4", features = [ "serde" ] }
 
@@ -20,4 +20,4 @@ reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = f
 
 [dev-dependencies]
 env_logger =  "^0.9"
-tokio = { version = "^1.9", features = [ "macros", "rt-multi-thread" ] }
+tokio = { version = "^1.17", features = [ "macros", "rt-multi-thread" ] }

@@ -133,13 +133,6 @@ impl tf_core::Video for YTVideo {
     fn uploaded(&self) -> chrono::NaiveDateTime {
         self.uploaded
     }
-
-    /// The default `image`-crate currently only supports webp as grayscale, therefore this has to be overwritten.
-    fn convert_image(data: &[u8]) -> Option<image::DynamicImage> {
-        let webp_decoder = webp::Decoder::new(&data);
-        let webp_image = webp_decoder.decode();
-        webp_image.map(|i| i.to_image())
-    }
 }
 
 impl YTVideo {

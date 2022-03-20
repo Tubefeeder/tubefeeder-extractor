@@ -1,7 +1,7 @@
 [package]
 name = "tf_observer"
-version = "0.1.1"
-edition = "2018"
+version = "0.1.2"
+edition = "2021"
 license = "GPL-3.0-or-later"
 description = "The observer pattern used in Tubefeeder-Extractor"
 homepage = "https://www.tubefeeder.de"
@@ -13,5 +13,5 @@ keywords = [ "tubefeeder" ]
 [dependencies]
 
 [dev-dependencies]
-mockall = "0.10.2"
-mockito = "0.30.0"
+mockall = "0.11.0"
+mockito = "0.31.0"

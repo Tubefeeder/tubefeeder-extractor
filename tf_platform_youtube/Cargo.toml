@@ -1,7 +1,7 @@
 [package]
 name = "tf_platform_youtube"
-version = "0.1.1"
-edition = "2018"
+version = "0.1.2"
+edition = "2021"
 license = "GPL-3.0-or-later"
 description = "The platform for youtube Tubefeeder-Extractor"
 homepage = "https://www.tubefeeder.de"
@@ -10,8 +10,8 @@ repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tf_core = { version = "0.1.1", path = "../tf_core" }
-tf_utils = { version = "0.1.1", path = "../tf_utils" }
+tf_core = { version = "0.1.2", path = "../tf_core" }
+tf_utils = { version = "0.1.2", path = "../tf_utils" }
 
 piped = "0.0.1"
 
@@ -22,11 +22,11 @@ quick-xml = { version = "^0.22", features = [ "serialize" ] }
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
 log = "^0.4"
 
-image = "^0.23"
+image = "^0.24"
 webp = "^0.2"
 
 [dev-dependencies]
-mockall = "^0.10"
-mockito = "^0.30"
+mockall = "^0.11"
+mockito = "^0.31"
 env_logger =  "^0.9"
-tokio = { version = "^1.9", features = [ "macros" ] }
+tokio = { version = "^1.17", features = [ "macros" ] }

@@ -1,7 +1,7 @@
 [package]
 name = "tf_playlist"
-version = "0.1.2"
-edition = "2018"
+version = "0.1.3"
+edition = "2021"
 license = "GPL-3.0-or-later"
 description = "The playlist feature used in Tubefeeder"
 homepage = "https://www.tubefeeder.de"
@@ -11,6 +11,6 @@ keywords = [ "tubefeeder" ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tf_observer = { version =  "0.1.0", path = "../tf_observer" }
+tf_observer = { version =  "0.1.1", path = "../tf_observer" }
 
 log = "^0.4"

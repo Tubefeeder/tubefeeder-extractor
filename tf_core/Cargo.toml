@@ -1,7 +1,7 @@
 [package]
 name = "tf_core"
-version = "0.1.1"
-edition = "2018"
+version = "0.1.2"
+edition = "2021"
 license = "GPL-3.0-or-later"
 description = "The core part of Tubefeeder"
 homepage = "https://www.tubefeeder.de"
@@ -11,17 +11,17 @@ keywords = [ "tubefeeder" ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tf_observer = { version = "0.1.1", path = "../tf_observer" }
+tf_observer = { version = "0.1.2", path = "../tf_observer" }
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
-tokio = { version = "^1.9", features = [ "macros" ] }
+tokio = { version = "^1.17", features = [ "macros" ] }
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
 futures = "^0.3"
 log = "^0.4"
 
-image = "^0.23"
+image = "^0.24"
 
 [dev-dependencies]
-mockall = "0.10.2"
-mockito = "0.30.0"
+mockall = "0.11.0"
+mockito = "0.31.0"
