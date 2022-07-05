@@ -25,6 +25,13 @@ use tf_core::{ErrorStore, GeneratorWithClient, Subscription};
 
 const PIPED_API_URL: &'static str = "https://pipedapi.kavin.rocks";
 
+fn piped_api_url() -> String {
+    match std::env::var("PIPED_API_URL") {
+        Ok(url) => url,
+        Err(_e) => PIPED_API_URL.to_string(),
+    }
+}
+
 /// A [`YTSubscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct YTSubscription {
@@ -55,7 +62,7 @@ impl YTSubscription {
     /// and return the first result if it exists.
     pub async fn try_from_search<S: AsRef<str>>(query: S) -> Option<Self> {
         log::debug!("Getting channel from query {}", query.as_ref());
-        let piped = PipedClient::new(&reqwest::Client::new(), PIPED_API_URL);
+        let piped = PipedClient::new(&reqwest::Client::new(), piped_api_url());
         let result = piped.search_channel(query).await;
         if let Ok(channel_search) = result {
             log::debug!(
@@ -76,7 +83,7 @@ impl YTSubscription {
 
     /// Try to get the channel name from the channel id.
     pub async fn update_name(&self, client: &reqwest::Client) -> Option<String> {
-        let piped = PipedClient::new(&client, PIPED_API_URL);
+        let piped = PipedClient::new(&client, piped_api_url());
         if let Ok(channel) = piped.channel_from_id(&self.id).await {
             Some(channel.name)
         } else {
@@ -140,7 +147,7 @@ impl GeneratorWithClient for YTSubscription {
             self.name().unwrap_or_else(|| self.id())
         );
 
-        let piped = PipedClient::new(client, PIPED_API_URL);
+        let piped = PipedClient::new(client, piped_api_url());
         let channel_res = piped.channel_from_id(self.id.clone()).await;
 
         if let Err(e) = &channel_res {
