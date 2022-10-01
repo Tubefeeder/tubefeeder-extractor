@@ -13,7 +13,7 @@ repository = "https://github.com/Tubefeeder/tubefeeder-extractor"
 tf_core = { version = "0.1.2", path = "../tf_core" }
 tf_utils = { version = "0.1.2", path = "../tf_utils" }
 
-piped = "0.0.2"
+piped = { git = "https://github.com/TeamPiped/piped-rust-sdk", rev = "fb51fef974f7203717c7dbc0b792b74c24f7789f" }
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }

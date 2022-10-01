@@ -24,13 +24,13 @@ use std::sync::{Arc, Mutex};
 
 /// A store mapping [Video]s `V` to a globally
 /// unique `Arc<Mutex<V>>`-Version of the video.
-pub(crate) struct VideoStore<V> {
+pub struct VideoStore<V> {
     videos: HashMap<V, Weak<Mutex<V>>>,
 }
 
 impl<V: Hash + Clone + std::cmp::Eq> VideoStore<V> {
     /// Create a new, empty [VideoStore].
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         VideoStore {
             videos: HashMap::new(),
         }
@@ -40,7 +40,7 @@ impl<V: Hash + Clone + std::cmp::Eq> VideoStore<V> {
     ///
     /// This will either insert this video into the `VideoStore` or get a
     /// already existing instance.
-    pub(crate) fn get(&mut self, video: &V) -> Arc<Mutex<V>> {
+    pub fn get(&mut self, video: &V) -> Arc<Mutex<V>> {
         if let Some(value) = self.videos.get(video) {
             if let Some(strong) = value.upgrade() {
                 strong

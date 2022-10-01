@@ -19,8 +19,10 @@
 
 //! A implementation of a [Tubefeeder-extractor](https://github.com/Tubefeeder/tubefeeder-extractor) for youtube using [piped](https://github.com/TeamPiped/Piped)-api.
 
+mod pipeline;
 mod subscription;
 mod video;
 
+pub use pipeline::YTPipeline;
 pub use subscription::YTSubscription;
 pub use video::YTVideo;

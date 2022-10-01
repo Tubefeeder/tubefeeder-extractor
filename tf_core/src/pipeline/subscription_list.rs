@@ -48,6 +48,12 @@ where
         self.subscriptions.retain(|s| s != &subscription);
     }
 
+    /// Update a [Subscription] from the [SubscriptionList].
+    pub fn update(&mut self, subscription: S) {
+        self.remove(subscription.clone());
+        self.add(subscription)
+    }
+
     /// Get a [Vec] of all [Subscription]s.
     pub fn subscriptions(&self) -> Vec<S> {
         self.subscriptions.clone()

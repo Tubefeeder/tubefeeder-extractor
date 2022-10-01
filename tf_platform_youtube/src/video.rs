@@ -138,19 +138,15 @@ impl tf_core::Video for YTVideo {
 impl YTVideo {
     pub(crate) fn from_related_stream(
         _errors: &ErrorStore,
-        v: RelatedStream,
+        v: &RelatedStream,
         subscription: YTSubscription,
     ) -> Self {
         YTVideo {
             url: format!("{}/{}", YOUTUBE_URL, v.url),
-            title: v.title,
+            title: v.title.clone(),
             subscription,
-            uploaded: v
-                .uploaded_date
-                .map(|d| tf_utils::timeago_parser(d).ok())
-                .unwrap_or(None)
-                .unwrap_or(chrono::NaiveDate::from_ymd(1, 1, 1).and_hms(0, 0, 0)),
-            thumbnail_url: v.thumbnail,
+            uploaded: chrono::NaiveDateTime::from_timestamp(v.uploaded/1000, 0),
+            thumbnail_url: v.thumbnail.clone(),
         }
     }
 }

@@ -26,7 +26,7 @@ use async_trait::async_trait;
 /// A [Pipeline][crate::Pipeline]-component expanding [Video]s `V` into
 /// [ExpandedVideo]s.
 #[derive(Clone)]
-pub(crate) struct Expander<V, G> {
+pub struct Expander<V, G> {
     /// The internal [Generator].
     generator: G,
 

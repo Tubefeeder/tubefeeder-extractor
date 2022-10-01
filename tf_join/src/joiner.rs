@@ -27,6 +27,7 @@ use tf_core::{ErrorStore, Generator, Pipeline, Video};
 use tf_filter::{Filter, FilterGroup};
 
 use async_trait::async_trait;
+use tf_yt::YTPipeline;
 
 use crate::{AnySubscriptionList, AnyVideo, AnyVideoFilter};
 
@@ -41,7 +42,7 @@ pub struct Joiner {
     /// The [FilterGroup] used to filter out [AnyVideo]s.
     filters: Arc<Mutex<FilterGroup<AnyVideoFilter>>>,
     #[cfg(feature = "youtube")]
-    yt_pipeline: Pipeline<tf_yt::YTSubscription, tf_yt::YTVideo>,
+    yt_pipeline: YTPipeline,
     #[cfg(feature = "peertube")]
     pt_pipeline: Pipeline<tf_pt::PTSubscription, tf_pt::PTVideo>,
     #[cfg(feature = "lbry")]
@@ -55,7 +56,7 @@ impl Joiner {
     /// Create a new [Joiner] with no [AnySubscription][crate::AnySubscription]s and no [Filter][tf_filter::Filter]s.
     pub fn new() -> Self {
         #[cfg(feature = "youtube")]
-        let yt_pipeline = Pipeline::new();
+        let yt_pipeline = YTPipeline::new();
         #[cfg(feature = "peertube")]
         let pt_pipeline = Pipeline::new();
         #[cfg(feature = "lbry")]
@@ -168,6 +169,10 @@ impl Generator for Joiner {
             .map(|i| i.collect())
             .collect::<Vec<Vec<AnyVideo>>>()
             .concat();
+        videos
+            .iter()
+            .map(|v| v.subscription())
+            .for_each(|s| self.subscription_list.update(s));
         videos.retain(|v| !self.filters.lock().unwrap().matches(v));
         videos.sort_by_cached_key(|v| v.uploaded());
         videos.reverse();

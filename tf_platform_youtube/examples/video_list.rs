@@ -19,9 +19,9 @@
 
 extern crate tf_platform_youtube as tf_yt;
 
-use tf_core::{ErrorStore, Generator, Pipeline, Subscription, Video};
+use tf_core::{ErrorStore, Generator, Subscription, Video};
+use tf_yt::YTPipeline;
 use tf_yt::YTSubscription;
-use tf_yt::YTVideo;
 
 const SUBSCRIPTION_IDS: &'static [&'static str] = &[
     "UCYO_jab_esuFRV4b17AJtAw",
@@ -102,7 +102,7 @@ const SUBSCRIPTION_IDS: &'static [&'static str] = &[
 pub async fn main() {
     env_logger::init();
     log::info!("Logging enabled");
-    let pipeline = Pipeline::<YTSubscription, YTVideo>::new();
+    let pipeline = YTPipeline::new();
     let subscriptions = pipeline.subscription_list();
 
     let errors = ErrorStore::new();

@@ -18,10 +18,12 @@
  */
 
 use crate::video::YTVideo;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use piped::{ChannelSearchItem, PipedClient};
-use tf_core::{ErrorStore, GeneratorWithClient, Subscription};
+use tf_core::{ErrorStore, GeneratorWithClient, Subscription, SubscriptionList};
 
 const PIPED_API_URL: &'static str = "https://pipedapi.kavin.rocks";
 
@@ -33,11 +35,18 @@ fn piped_api_url() -> String {
 }
 
 /// A [`YTSubscription`] to a YouTube-Channel. The Youtube-Channel is referenced by the channel id.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Eq, Hash)]
 pub struct YTSubscription {
     /// The channel id.
     id: String,
     name: Option<String>,
+}
+
+impl std::cmp::PartialEq for YTSubscription {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+
 }
 
 impl YTSubscription {
@@ -132,6 +141,71 @@ impl From<YTSubscription> for Vec<String> {
     }
 }
 
+#[derive(Clone)]
+pub struct YTSubscriptionList(pub Arc<Mutex<SubscriptionList<YTSubscription>>>);
+
+#[async_trait]
+impl GeneratorWithClient for YTSubscriptionList {
+    type Item = YTVideo;
+    type Iterator = std::vec::IntoIter<Self::Item>;
+
+    async fn generate_with_client(
+        &self,
+        errors: &ErrorStore,
+        client: &reqwest::Client,
+    ) -> Self::Iterator {
+        let subs = self
+            .0
+            .lock()
+            .expect("Poisoned mutex: YT Subscription List")
+            .subscriptions();
+        let num_subs = subs.len();
+        // For few subs, generate the videos without bulk, as bulk often has none or few videos in
+        // the case that the subscriptions did not upload for a longer while.
+        if num_subs <= 10 {
+            let mut videos = vec![];
+            for s in subs {
+                videos.append(&mut s.generate_with_client(errors, client).await.collect());
+            }
+            return videos.into_iter();
+        }
+
+        log::debug!(
+            "Generating YT videos from channels {:?}",
+            subs.iter().map(|s| s.name().unwrap_or_else(|| s.id())
+        ));
+
+        let piped = PipedClient::new(client, piped_api_url());
+        let videos_res = piped.bulk_feed(subs.iter().map(|s| s.id())).await;
+
+        if let Err(e) = &videos_res {
+            log::error!("Error generating youtube videos from subscriptions {:?}: {}", subs, e);
+            for _ in 0..num_subs {
+                errors.add(piped_to_tubefeeder_error(e));
+            }
+            return vec![].into_iter();
+        }
+
+        let videos = videos_res.unwrap();
+
+        let map_id_to_subscription: HashMap<String, YTSubscription> =
+            subs.iter().map(|s| (s.id(), s.clone())).collect();
+
+        Box::new(videos.into_iter().map(|v| {
+            YTVideo::from_related_stream(
+                errors,
+                &v,
+                map_id_to_subscription
+                    .get(v.uploader_url.strip_prefix("/channel/").unwrap_or_default())
+                    .expect("YTVideo got unknown channel uploader id")
+                    .with_name(&v.uploader_name),
+            )
+        }))
+        .collect::<Vec<YTVideo>>()
+        .into_iter()
+    }
+}
+
 #[async_trait]
 impl GeneratorWithClient for YTSubscription {
     type Item = YTVideo;
@@ -151,7 +225,7 @@ impl GeneratorWithClient for YTSubscription {
         let channel_res = piped.channel_from_id(self.id.clone()).await;
 
         if let Err(e) = &channel_res {
-            log::error!("Error generating youtube videos from subscription {}", self);
+            log::error!("Error generating youtube videos from subscription {:?}: {}", self, e);
             errors.add(piped_to_tubefeeder_error(e));
             return vec![].into_iter();
         }
@@ -163,7 +237,7 @@ impl GeneratorWithClient for YTSubscription {
         Box::new(
             videos
                 .into_iter()
-                .map(|v| YTVideo::from_related_stream(errors, v, self.with_name(&name))),
+                .map(|v| YTVideo::from_related_stream(errors, &v, self.with_name(&name))),
         )
         .collect::<Vec<YTVideo>>()
         .into_iter()

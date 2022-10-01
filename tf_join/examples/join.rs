@@ -90,6 +90,6 @@ pub async fn main() {
             AnyVideo::Test(_v) => "Test",
         };
 
-        println!("{}: {} - {}", source, video.title(), video.subscription())
+        println!("{}: {} - {} ({})", source, video.title(), video.subscription(), video.uploaded())
     }
 }

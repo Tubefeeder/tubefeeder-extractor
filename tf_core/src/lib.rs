@@ -39,13 +39,12 @@ pub use definitions::generator::{Generator, GeneratorWithClient};
 pub use definitions::subscription::Subscription;
 pub use definitions::video::Video;
 pub use error::{Error, ErrorEvent, ErrorStore, ErrorSummary, NetworkError, ParseError};
+pub use pipeline::expander::Expander;
+pub use pipeline::merger::Merger;
 pub use pipeline::pipe::Pipeline;
+pub use pipeline::store_access::StoreAccess;
 pub use pipeline::subscription_list::SubscriptionList;
-
-use pipeline::expander::Expander;
-use pipeline::merger::Merger;
-use pipeline::store_access::StoreAccess;
-use pipeline::video_store::VideoStore;
+pub use pipeline::video_store::VideoStore;
 
 #[cfg(test)]
 mod mock {

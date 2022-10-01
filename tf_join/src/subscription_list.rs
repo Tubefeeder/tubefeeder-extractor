@@ -141,6 +141,25 @@ impl AnySubscriptionList {
             .notify(SubscriptionEvent::Remove(subscription))
     }
 
+    /// Update a [AnySubscription] to the [AnySubscriptionList].
+    ///
+    /// This will notify all [Observer]s with [SubscriptionEvent::Update].
+    pub fn update(&self, subscription: AnySubscription) {
+        match subscription.clone() {
+            #[cfg(feature = "youtube")]
+            AnySubscription::Youtube(sub) => self.yt_subscriptions.lock().unwrap().update(sub),
+            #[cfg(feature = "peertube")]
+            AnySubscription::Peertube(sub) => self.pt_subscriptions.lock().unwrap().update(sub),
+            #[cfg(feature = "lbry")]
+            AnySubscription::Lbry(sub) => self.lbry_subscriptions.lock().unwrap().update(sub),
+            // -- Add case here.
+            #[cfg(test)]
+            AnySubscription::Test(sub) => self.test_subscriptions.lock().unwrap().update(sub),
+        }
+        self.observers
+            .notify(SubscriptionEvent::Update(subscription))
+    }
+
     /// Iterate over all stored [AnySubscription]s.
     pub fn iter(&self) -> impl Iterator<Item = AnySubscription> {
         let mut vec = vec![];
@@ -208,6 +227,8 @@ pub enum SubscriptionEvent {
     Add(AnySubscription),
     /// A [AnySubscription] was removed. See [AnySubscriptionList::remove].
     Remove(AnySubscription),
+    /// A [AnySubscription] was updated. See [AnySubscriptionList::update].
+    Update(AnySubscription),
 }
 
 impl Observable<SubscriptionEvent> for AnySubscriptionList {
