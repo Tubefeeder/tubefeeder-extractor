@@ -46,7 +46,6 @@ impl std::cmp::PartialEq for YTSubscription {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
-
 }
 
 impl YTSubscription {
@@ -172,14 +171,18 @@ impl GeneratorWithClient for YTSubscriptionList {
 
         log::debug!(
             "Generating YT videos from channels {:?}",
-            subs.iter().map(|s| s.name().unwrap_or_else(|| s.id())
-        ));
+            subs.iter().map(|s| s.name().unwrap_or_else(|| s.id()))
+        );
 
         let piped = PipedClient::new(client, piped_api_url());
         let videos_res = piped.bulk_feed(subs.iter().map(|s| s.id())).await;
 
         if let Err(e) = &videos_res {
-            log::error!("Error generating youtube videos from subscriptions {:?}: {}", subs, e);
+            log::error!(
+                "Error generating youtube videos from subscriptions {:?}: {}",
+                subs,
+                e
+            );
             for _ in 0..num_subs {
                 errors.add(piped_to_tubefeeder_error(e));
             }
@@ -225,7 +228,11 @@ impl GeneratorWithClient for YTSubscription {
         let channel_res = piped.channel_from_id(self.id.clone()).await;
 
         if let Err(e) = &channel_res {
-            log::error!("Error generating youtube videos from subscription {:?}: {}", self, e);
+            log::error!(
+                "Error generating youtube videos from subscription {:?}: {}",
+                self,
+                e
+            );
             errors.add(piped_to_tubefeeder_error(e));
             return vec![].into_iter();
         }

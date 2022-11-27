@@ -22,11 +22,17 @@ use tf_utils::rss::{RssExtractor, RssExtractorWrapper, WithName};
 
 use crate::PTVideo;
 
-#[derive(Clone, Hash, PartialEq, Eq, Debug)]
+#[derive(Clone, Eq, Debug, Hash)]
 pub struct PTSubscription {
     id: String,
     base_url: String,
     name: Option<String>,
+}
+
+impl std::cmp::PartialEq for PTSubscription {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.base_url == other.base_url
+    }
 }
 
 impl PTSubscription {

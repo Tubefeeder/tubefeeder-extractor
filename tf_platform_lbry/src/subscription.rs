@@ -22,10 +22,16 @@ use tf_utils::rss::{RssExtractor, RssExtractorWrapper, WithName};
 
 use crate::LbryVideo;
 
-#[derive(Clone, Hash, PartialEq, Eq, Debug)]
+#[derive(Clone, Hash, Eq, Debug)]
 pub struct LbrySubscription {
     id: String,
     name: Option<String>,
+}
+
+impl std::cmp::PartialEq for LbrySubscription {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
 }
 
 impl LbrySubscription {
