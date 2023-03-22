@@ -82,9 +82,9 @@ impl std::fmt::Display for AnySubscription {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             #[cfg(feature = "youtube")]
-            AnySubscription::Youtube(s) => write!(f, "{}", s),
+            AnySubscription::Youtube(_) => write!(f, "YouTube"),
             #[cfg(feature = "peertube")]
-            AnySubscription::Peertube(s) => write!(f, "{}", s),
+            AnySubscription::Peertube(_) => write!(f, "PeerTube"),
             #[cfg(feature = "lbry")]
             AnySubscription::Lbry(s) => write!(f, "{}", s),
             // -- Add new case here.
