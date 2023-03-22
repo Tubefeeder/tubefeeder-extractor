@@ -86,7 +86,7 @@ impl std::fmt::Display for AnySubscription {
             #[cfg(feature = "peertube")]
             AnySubscription::Peertube(_) => write!(f, "PeerTube"),
             #[cfg(feature = "lbry")]
-            AnySubscription::Lbry(s) => write!(f, "{}", s),
+            AnySubscription::Lbry(s) => write!(f, "LBRY"),
             // -- Add new case here.
             #[cfg(test)]
             AnySubscription::Test(s) => write!(f, "{}", s),
