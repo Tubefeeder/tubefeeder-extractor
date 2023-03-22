@@ -82,11 +82,11 @@ impl std::fmt::Display for AnySubscription {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             #[cfg(feature = "youtube")]
-            AnySubscription::Youtube(_) => write!(f, "YouTube"),
+            AnySubscription::Youtube(s) => write!(f, "{}", s),
             #[cfg(feature = "peertube")]
-            AnySubscription::Peertube(_) => write!(f, "PeerTube"),
+            AnySubscription::Peertube(s) => write!(f, "{}", s),
             #[cfg(feature = "lbry")]
-            AnySubscription::Lbry(s) => write!(f, "LBRY"),
+            AnySubscription::Lbry(s) => write!(f, "{}", s),
             // -- Add new case here.
             #[cfg(test)]
             AnySubscription::Test(s) => write!(f, "{}", s),
@@ -216,11 +216,11 @@ impl std::fmt::Display for Platform {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             #[cfg(feature = "youtube")]
-            Platform::Youtube => write!(f, "Youtube"),
+            Platform::Youtube => write!(f, "YouTube"),
             #[cfg(feature = "peertube")]
-            Platform::Peertube => write!(f, "Peertube"),
+            Platform::Peertube => write!(f, "PeerTube"),
             #[cfg(feature = "lbry")]
-            Platform::Lbry => write!(f, "Lbry"),
+            Platform::Lbry => write!(f, "LBRY"),
             // -- Add new case here.
             #[cfg(test)]
             Platform::Test => write!(f, "Test"),
