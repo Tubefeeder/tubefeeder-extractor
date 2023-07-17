@@ -51,7 +51,7 @@ pub struct Item {
 
     #[serde(rename = "media/thumbnail")]
     #[serde(default)]
-    pub media_thumbnail: MediaThumbnail,
+    pub media_thumbnail: Vec<MediaThumbnail>,
     #[serde(rename = "itunes/image")]
     #[serde(default)]
     pub itunes_image: ItunesImage,

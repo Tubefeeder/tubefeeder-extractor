@@ -23,8 +23,8 @@ use std::error::Error;
 use tf_core::{ErrorStore, GeneratorWithClient, Video};
 use tf_pt::{PTSubscription, PTVideo};
 
-const BASE_URL: &str = "https://peertube.linuxrocks.online";
-const ID: &str = "techlore_channel@tube.privacytools.io";
+const BASE_URL: &str = "https://tilvids.com";
+const ID: &str = "thelinuxexperiment_channel@tilvids.com";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
