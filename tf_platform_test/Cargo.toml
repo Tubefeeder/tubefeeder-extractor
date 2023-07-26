@@ -1,6 +1,6 @@
 [package]
 name = "tf_platform_test"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 license = "GPL-3.0-or-later"
 description = "The platform for testing Tubefeeder-Extractor"
@@ -11,7 +11,7 @@ keywords = [ "tubefeeder" ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tf_core = { version = "0.1.2", path = "../tf_core" }
+tf_core = { version = "0.1.3", path = "../tf_core" }
 
 chrono = { version = "^0.4", features = [ "serde" ] }
 async-trait = "^0.1"
