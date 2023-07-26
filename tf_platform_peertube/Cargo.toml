@@ -20,4 +20,4 @@ reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = f
 
 [dev-dependencies]
 env_logger =  "^0.9"
-tokio = { version = "^1.17", features = [ "macros", "rt-multi-thread" ] }
+tokio = { version = "^1.29", features = [ "macros", "rt-multi-thread" ] }

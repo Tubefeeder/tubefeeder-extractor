@@ -85,7 +85,10 @@ impl TestVideo {
         Self {
             title: title.as_ref().to_string(),
             subscription,
-            uploaded: chrono::NaiveDate::from_ymd(2021, 1, 1).and_hms(20, 10, 0),
+            uploaded: chrono::NaiveDate::from_ymd_opt(2021, 1, 1)
+                .unwrap()
+                .and_hms_opt(20, 10, 0)
+                .unwrap(),
         }
     }
 }
@@ -103,13 +106,19 @@ impl GeneratorWithClient for TestSubscription {
     async fn generate_with_client(&self, _e: &ErrorStore, _c: &reqwest::Client) -> Self::Iterator {
         let video1 = TestVideo {
             title: "This is the test video 1".to_owned(),
-            uploaded: chrono::NaiveDate::from_ymd(2021, 8, 17).and_hms(0, 0, 0),
+            uploaded: chrono::NaiveDate::from_ymd_opt(2021, 8, 17)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap(),
             subscription: self.clone(),
         };
 
         let video2 = TestVideo {
             title: "This is the test video 2".to_owned(),
-            uploaded: chrono::NaiveDate::from_ymd(2021, 5, 1).and_hms(0, 0, 0),
+            uploaded: chrono::NaiveDate::from_ymd_opt(2021, 5, 1)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap(),
             subscription: self.clone(),
         };
 

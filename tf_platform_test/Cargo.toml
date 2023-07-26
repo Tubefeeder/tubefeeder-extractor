@@ -16,4 +16,4 @@ tf_core = { version = "0.1.2", path = "../tf_core" }
 chrono = { version = "^0.4", features = [ "serde" ] }
 async-trait = "^0.1"
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
-tokio = { version = "^1.17", features = [ "macros" ] }
+tokio = { version = "^1.29", features = [ "macros" ] }

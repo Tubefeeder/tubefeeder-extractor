@@ -144,8 +144,14 @@ mod test {
             Arc::new(Mutex::new(SubscriptionList::new()));
         let merger: Merger<MockSubscription, MockVideo> = Merger::new(subscriptions.clone());
 
-        let date_video1 = NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0);
-        let date_video2 = NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0);
+        let date_video1 = NaiveDate::from_ymd_opt(2021, 8, 12)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let date_video2 = NaiveDate::from_ymd_opt(2021, 8, 11)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
 
         subscriptions
             .lock()
@@ -166,11 +172,23 @@ mod test {
             Arc::new(Mutex::new(SubscriptionList::new()));
         let merger: Merger<MockSubscription, MockVideo> = Merger::new(subscriptions.clone());
 
-        let date_video1 = NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0);
-        let date_video2 = NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0);
+        let date_video1 = NaiveDate::from_ymd_opt(2021, 8, 12)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let date_video2 = NaiveDate::from_ymd_opt(2021, 8, 11)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
 
-        let date_video3 = NaiveDate::from_ymd(2021, 8, 10).and_hms(0, 0, 0);
-        let date_video4 = NaiveDate::from_ymd(2021, 8, 9).and_hms(0, 0, 0);
+        let date_video3 = NaiveDate::from_ymd_opt(2021, 8, 10)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let date_video4 = NaiveDate::from_ymd_opt(2021, 8, 9)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
 
         subscriptions
             .lock()

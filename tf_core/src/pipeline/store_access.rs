@@ -86,8 +86,18 @@ mod test {
         let mut generator = MockGenerator::new();
         generator.expect_generate().returning(|_| {
             vec![
-                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
+                make_video(
+                    NaiveDate::from_ymd_opt(2021, 8, 12)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
+                make_video(
+                    NaiveDate::from_ymd_opt(2021, 8, 11)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
             ]
             .into_iter()
         });
@@ -110,8 +120,18 @@ mod test {
         let mut generator = MockGenerator::new();
         generator.expect_generate().returning(|_| {
             vec![
-                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
+                make_video(
+                    NaiveDate::from_ymd_opt(2021, 8, 12)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
+                make_video(
+                    NaiveDate::from_ymd_opt(2021, 8, 12)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
             ]
             .into_iter()
         });
@@ -134,15 +154,35 @@ mod test {
         let mut generator = MockGenerator::new();
         generator.expect_generate().times(1).returning(|_| {
             vec![
-                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
+                make_video(
+                    NaiveDate::from_ymd_opt(2021, 8, 12)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
+                make_video(
+                    NaiveDate::from_ymd_opt(2021, 8, 11)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
             ]
             .into_iter()
         });
         generator.expect_generate().times(1).returning(|_| {
             vec![
-                make_video(NaiveDate::from_ymd(2021, 8, 12).and_hms(0, 0, 0)),
-                make_video(NaiveDate::from_ymd(2021, 8, 11).and_hms(0, 0, 0)),
+                make_video(
+                    NaiveDate::from_ymd_opt(2021, 8, 12)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
+                make_video(
+                    NaiveDate::from_ymd_opt(2021, 8, 11)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
             ]
             .into_iter()
         });

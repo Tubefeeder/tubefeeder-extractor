@@ -145,7 +145,8 @@ impl YTVideo {
             url: format!("{}/{}", YOUTUBE_URL, v.url),
             title: v.title.clone(),
             subscription,
-            uploaded: chrono::NaiveDateTime::from_timestamp(v.uploaded/1000, 0),
+            uploaded: chrono::NaiveDateTime::from_timestamp_opt(v.uploaded / 1000, 0)
+                .unwrap_or_default(),
             thumbnail_url: v.thumbnail.clone(),
         }
     }

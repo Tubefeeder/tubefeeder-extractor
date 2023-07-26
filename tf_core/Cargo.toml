@@ -15,7 +15,7 @@ tf_observer = { version = "0.1.2", path = "../tf_observer" }
 
 async-trait = "^0.1"
 chrono = { version = "^0.4", features = [ "serde" ] }
-tokio = { version = "^1.17", features = [ "macros" ] }
+tokio = { version = "^1.29", features = [ "macros" ] }
 reqwest = { version = "^0.11", features = [ "rustls-tls" ], default-features = false }
 futures = "^0.3"
 log = "^0.4"
@@ -23,5 +23,5 @@ log = "^0.4"
 image = "^0.24"
 
 [dev-dependencies]
-mockall = "0.11.0"
-mockito = "0.31.0"
+mockall = "0.11.4"
+mockito = "0.31.1"
