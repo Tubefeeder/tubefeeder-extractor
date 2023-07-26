@@ -149,7 +149,12 @@ impl FromItemAndSub<PTSubscription> for PTVideo {
             url: i.link,
             uploaded: i.pub_date,
             subscription: sub,
-            thumbnail_url: i.media_thumbnail.url,
+            thumbnail_url: i
+                .media_thumbnail
+                .into_iter()
+                .next()
+                .map(|m| m.url)
+                .unwrap_or_default(),
         }
     }
 }
