@@ -1,5 +1,7 @@
 # Tubefeeder-extractor
 
+__MOVED__: This repository moved to [GitLab](https://gitlab.com/schmiddi-on-mobile/tubefeeder-extractor/-/merge_requests/8). Please do not open any issues or pull requests in this repository.
+
 This is the backend for [Tubefeeder](https://github.com/Tubefeeder/Tubefeeder)
 This could of course also be used for other projects.
 
